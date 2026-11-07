@@ -5,8 +5,6 @@
 
 Seleccione origen, destino y fecha para consultar los trenes del día. El planificador calcula los transbordos y muestra el recorrido en el mapa. Disponible en español e inglés, con temas claro y oscuro.
 
-> Horario no oficial. La vigencia de las imágenes de referencia no está confirmada.
-
 ## Inicio rápido
 
 Requiere Node.js 22.18 o superior y pnpm 12.16.1.
