@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f4ef" />
+    <meta
+      name="description"
+      content="Consultá los horarios de tren de Alajuela, Heredia, Cartago, Paraíso, Pavas y Belén. Elegí tus estaciones y revisá las paradas de cada servicio."
+    />
+    <meta
+      property="og:title"
+      content="Entre estaciones · Horarios de tren en Costa Rica"
+    />
+    <meta
+      property="og:description"
+      content="Tu próximo tren, con sus horas y paradas publicadas. Una guía independiente del tren en Costa Rica."
+    />
+    <meta property="og:type" content="website" />
+    <title>Entre estaciones · Horarios de tren en Costa Rica</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <meta property="og:image" content="assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="preload"
+      href="assets/fonts/archivo-400_800-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="theme.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#horarios">Saltar a los horarios</a>
+    <header class="site-header wrap">
+      <a class="wordmark" href="./">entre<br />estaciones<span>CR</span></a>
+      <nav aria-label="Navegación principal">
+        <a href="#horarios" aria-current="page">Horarios</a>
+        <a href="fuentes.html">Fuentes</a>
+        <button class="theme-toggle" type="button" aria-pressed="false">
+          Modo oscuro
+        </button>
+      </nav>
+    </header>
+    <main class="wrap" id="horarios">
+      <section class="intro" aria-labelledby="title">
+        <div>
+          <h1 id="title">Tu próximo tren.</h1>
+          <p>Elegí tus estaciones. El resto, en horario.</p>
+        </div>
+        <div class="local-time">
+          <span>Costa Rica · UTC−6</span><time id="clock">Hora local</time
+          ><span id="today">Servicios regulares de lunes a viernes</span>
+        </div>
+      </section>
+
+      <section class="planner" aria-label="Planificar un viaje">
+        <div class="route-tabs" role="group" aria-label="Corredor ferroviario">
+          <button type="button" data-route="heredia" aria-pressed="true">
+            <span class="route-code">ALA</span>Alajuela / Heredia
+          </button>
+          <button type="button" data-route="cartago" aria-pressed="false">
+            <span class="route-code">CAR</span>Cartago / Paraíso
+          </button>
+          <button type="button" data-route="belen" aria-pressed="false">
+            <span class="route-code">BEL</span>Pavas / Belén
+          </button>
+        </div>
+        <form id="journey-form">
+          <div class="field">
+            <label for="from">Origen</label
+            ><select id="from" name="from" required disabled>
+              <option>Cargando estaciones…</option>
+            </select>
+          </div>
+          <button
+            class="swap"
+            id="swap"
+            type="button"
+            aria-label="Invertir origen y destino"
+            disabled
+          >
+            ⇄
+          </button>
+          <div class="field">
+            <label for="to">Destino</label
+            ><select id="to" name="to" required disabled>
+              <option>Cargando estaciones…</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="date"
+              >Fecha del viaje
+              <span id="selected-date" class="field-hint"></span></label
+            ><input id="date" name="date" type="date" required disabled />
+          </div>
+          <div class="field time-field">
+            <label for="after">A partir de</label
+            ><input id="after" name="after" type="time" required disabled />
+          </div>
+          <button class="search-button" type="submit" disabled>
+            Ver trenes
+          </button>
+        </form>
+        <div class="planner-foot">
+          <span id="route-name"
+            >Horarios publicados, sin seguimiento en vivo.</span
+          ><button class="text-button" id="use-now" type="button" disabled>
+            Usar fecha y hora actual
+          </button>
+        </div>
+      </section>
+
+      <p
+        class="search-status"
+        id="search-status"
+        role="status"
+        aria-live="polite"
+      ></p>
+      <div class="journey-layout">
+        <section
+          class="departures"
+          aria-labelledby="departures-title"
+          aria-busy="true"
+          id="departures-section"
+        >
+          <div class="section-heading">
+            <h2 id="departures-title">Próximas salidas</h2>
+            <button id="share" type="button" class="text-button" disabled>
+              Copiar viaje
+            </button>
+          </div>
+          <div id="board" class="board">
+            <div class="empty-state">
+              <p>Cargando horarios…</p>
+              <span>Preparando las estaciones y los servicios publicados.</span>
+            </div>
+          </div>
+          <div id="more-departures"></div>
+          <details class="full-schedule" id="full-schedule">
+            <summary>Ver horario completo del tramo</summary>
+            <p class="small">
+              Patrón regular de lunes a viernes. Las salidas anteriores a la
+              hora consultada también aparecen aquí.
+            </p>
+            <div id="all-departures"></div>
+          </details>
+          <p class="schedule-note">
+            Las horas son del horario publicado. No indican retrasos ni la
+            posición del tren.
+          </p>
+        </section>
+
+        <section class="route-panel" aria-labelledby="stops-title">
+          <div class="section-heading">
+            <h2 id="stops-title">Estaciones del recorrido</h2>
+            <span id="stop-count" class="small"></span>
+          </div>
+          <div class="route-panel-body">
+            <p id="service-label" class="service-label">
+              Seleccioná un servicio para ver sus paradas.
+            </p>
+            <fieldset class="endpoint-choice">
+              <legend>Al tocar una estación, cambiar</legend>
+              <label
+                ><input type="radio" name="endpoint" value="from" checked />
+                Origen</label
+              ><label
+                ><input type="radio" name="endpoint" value="to" />
+                Destino</label
+              >
+            </fieldset>
+            <ol id="station-diagram" class="station-diagram"></ol>
+            <button
+              id="toggle-stations"
+              class="text-button"
+              type="button"
+              aria-expanded="false"
+              aria-controls="station-diagram"
+            >
+              Ver todas las estaciones
+            </button>
+            <p class="diagram-key">
+              El tramo resaltado une tu origen y destino. Sin hora significa que
+              ese tren no tiene parada publicada allí.
+            </p>
+            <a
+              id="station-map"
+              class="map-link"
+              href="https://www.openstreetmap.org/"
+              >Buscar el origen en el mapa</a
+            >
+            <details id="geographic-map">
+              <summary>Mapa geográfico de Alajuela / Heredia</summary>
+              <p class="small">
+                Ubicaciones del prototipo, aproximadas. La línea une estaciones;
+                no representa el trazado exacto de las vías.
+              </p>
+              <div id="map-status" role="status"></div>
+              <div
+                id="map"
+                aria-label="Mapa de las estaciones de Alajuela, Heredia y San José"
+              ></div>
+            </details>
+          </div>
+        </section>
+      </div>
+
+      <section class="travel-notes" aria-labelledby="before-travel">
+        <div>
+          <h2 id="before-travel">Antes de salir</h2>
+          <p>
+            Estos horarios son de lunes a viernes. Confirmá feriados, cambios y
+            avisos con INCOFER antes de viajar.
+          </p>
+          <a href="https://www.incofer.go.cr/">Consultar al operador</a>
+        </div>
+        <div>
+          <h3>Tarifas publicadas</h3>
+          <div id="fares"></div>
+          <p class="small">
+            Montos de las imágenes aportadas, sin fecha de vigencia. No se
+            calculan tarifas para otros tramos.
+          </p>
+        </div>
+        <div>
+          <h3>Personas adultas mayores</h3>
+          <p>
+            Las hojas de referencia indican pasaje gratuito y abordaje
+            preferencial para personas adultas mayores.
+          </p>
+          <a href="fuentes.html">Revisar horarios originales</a>
+        </div>
+      </section>
+      <noscript
+        ><p class="noscript">
+          Para consultar viajes necesitás JavaScript. Podés
+          <a href="fuentes.html">abrir los horarios originales</a> sin
+          activarlo.
+        </p></noscript
+      >
+    </main>
+    <footer class="site-footer wrap">
+      <span>Entre estaciones · Una guía independiente.</span
+      ><span
+        >Sin afiliación con INCOFER.
+        <a href="fuentes.html">Datos y alcance</a></span
+      >
+    </footer>
+    <script type="module">
+      import("./app.mjs").catch(() => {
+        document.getElementById("board").innerHTML =
+          '<div class="empty-state"><h3>No pudimos cargar los horarios.</h3><p>Recargá la página o consultá <a href="fuentes.html">las hojas originales</a>.</p></div>';
+        document
+          .getElementById("departures-section")
+          .setAttribute("aria-busy", "false");
+      });
+    </script>
+  </body>
+</html>
