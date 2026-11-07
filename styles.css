@@ -1360,4 +1360,14 @@ summary:hover {
   .simple-planner .language-picker { width: 100px; padding: 8px 10px; font-size: 12px; }
   .simple-planner .theme-toggle { white-space: nowrap; }
 }
-#clear-selection { margin-left: 16px; }
+#clear-selection {
+  min-height: 44px;
+  margin: 0 20px 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+}
+#clear-selection:hover { background: var(--ink); color: var(--ground); }

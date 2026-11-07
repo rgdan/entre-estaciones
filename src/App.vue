@@ -14,8 +14,8 @@ try {
 } catch {}
 const language = ref(['en', 'es'].includes(params.get('lang')) ? params.get('lang') : ['en', 'es'].includes(savedLanguage) ? savedLanguage : navigator.language.startsWith('en') ? 'en' : 'es');
 const dark = ref(savedTheme ? savedTheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
-const from = ref(Object.hasOwn(stationNames, params.get('from')) ? params.get('from') : 'heredia');
-const to = ref(Object.hasOwn(stationNames, params.get('to')) ? params.get('to') : 'cartago');
+const from = ref(params.get('from') === '' || Object.hasOwn(stationNames, params.get('from')) ? params.get('from') : 'heredia');
+const to = ref(params.get('to') === '' || Object.hasOwn(stationNames, params.get('to')) ? params.get('to') : 'cartago');
 const date = ref(validDate(params.get('date') || '') ? params.get('date') : costaRicaNow().date);
 const selected = shallowRef(null);
 const showAll = ref(false);
@@ -29,7 +29,7 @@ const notFound = !['/', '/index.html'].includes(location.pathname);
 const t = computed(() => messages[language.value]);
 const station = id => stationLabel(id, language.value);
 const stationIds = computed(() => Object.keys(stationNames).sort((a, b) => station(a).localeCompare(station(b), language.value)));
-const result = computed(() => planJourneys(routes, from.value, to.value, date.value, '00:00'));
+const result = computed(() => !from.value || !to.value ? { state: 'empty', all: [], upcoming: [] } : planJourneys(routes, from.value, to.value, date.value, '00:00'));
 const visibleJourneys = computed(() => showAll.value ? result.value.upcoming : result.value.upcoming.slice(0, 6));
 const formatDate = value => new Intl.DateTimeFormat(language.value === 'en' ? 'en-GB' : 'es-CR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
 const dateSummary = computed(() => validDate(date.value) ? `${formatDate(date.value)} · ${t.value.trips(result.value.upcoming.length)}` : '');
@@ -62,10 +62,12 @@ watch([from, to, selected, language], () => {
   mapController?.setLanguage();
 });
 async function clearSelection() {
+  from.value = '';
+  to.value = '';
   selected.value = null;
   detailsOpen.value = false;
   await nextTick();
-  document.querySelector('.select-journey')?.focus({ preventScroll: true });
+  document.getElementById('from')?.focus({ preventScroll: true });
 }
 function swapStations() { [from.value, to.value] = [to.value, from.value]; }
 async function selectJourney(option) {
@@ -113,11 +115,12 @@ onBeforeUnmount(() => { disposed = true; mapController?.destroy(); });
       <h1>{{ t.title }}</h1>
       <section class="planner" :aria-label="t.planner">
         <form id="journey-form" @submit.prevent>
-          <div class="field"><label for="from">{{ t.from }}</label><select id="from" v-model="from" required><option v-for="id in stationIds" :key="id" :value="id">{{ station(id) }}</option></select></div>
+          <div class="field"><label for="from">{{ t.from }}</label><select id="from" v-model="from" required><option value="" disabled>{{ t.chooseStation }}</option><option v-for="id in stationIds" :key="id" :value="id">{{ station(id) }}</option></select></div>
           <button id="swap" class="swap" type="button" :aria-label="t.swap" @click="swapStations">⇄</button>
-          <div class="field"><label for="to">{{ t.to }}</label><select id="to" v-model="to" required><option v-for="id in stationIds" :key="id" :value="id">{{ station(id) }}</option></select></div>
+          <div class="field"><label for="to">{{ t.to }}</label><select id="to" v-model="to" required><option value="" disabled>{{ t.chooseStation }}</option><option v-for="id in stationIds" :key="id" :value="id">{{ station(id) }}</option></select></div>
           <div class="field"><label for="date">{{ t.date }}</label><input id="date" v-model="date" type="date" required /></div>
         </form>
+        <button id="clear-selection" type="button" @click="clearSelection">{{ t.clear }}</button>
       </section>
       <div class="journey-layout">
         <section class="departures" aria-labelledby="departures-title" id="departures-section">
@@ -136,7 +139,6 @@ onBeforeUnmount(() => { disposed = true; mapController?.destroy(); });
             </li>
           </ul>
           <button v-if="result.upcoming.length > 6" id="more-trains" type="button" class="text-button" :aria-expanded="showAll" @click="showAll = !showAll">{{ showAll ? t.less : t.more(result.upcoming.length - 6) }}</button>
-          <button v-if="selected" id="clear-selection" type="button" class="text-button" @click="clearSelection">{{ t.clear }}</button>
           <details v-if="selected" id="journey-details" class="journey-details" :open="detailsOpen" @toggle="detailsOpen = $event.target.open">
             <summary>{{ t.details }}</summary>
             <h3 id="stops-title" ref="stopsTitle" tabindex="-1">{{ t.steps }}</h3>

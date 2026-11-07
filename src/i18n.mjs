@@ -2,6 +2,7 @@ import { stationNames } from '../data/schedules.mjs';
 
 export const messages = {
   es: {
+    chooseStation: 'Elegí una estación', empty: 'Elegí origen y destino para ver los trenes.',
     title: 'Horarios de tren', description: 'Elegí tus estaciones y una fecha para ver los trenes y transbordos en Costa Rica.',
     skip: 'Saltar a los horarios', navigation: 'Preferencias', language: 'Idioma / Language', dark: 'Modo oscuro', light: 'Modo claro',
     planner: 'Planificar un viaje', from: 'Origen', to: 'Destino', date: 'Fecha', swap: 'Invertir origen y destino',
@@ -21,6 +22,7 @@ export const messages = {
     notFound: 'Esta parada no existe.', back: 'Volver a los horarios',
   },
   en: {
+    chooseStation: 'Choose a station', empty: 'Choose your origin and destination to see trains.',
     title: 'Train schedules', description: 'Choose your stations and a date to find trains and transfers across Costa Rica.',
     skip: 'Skip to schedules', navigation: 'Preferences', language: 'Idioma / Language', dark: 'Dark mode', light: 'Light mode',
     planner: 'Plan a journey', from: 'From', to: 'To', date: 'Date', swap: 'Swap origin and destination',
