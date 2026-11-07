@@ -1,16 +1,17 @@
 <h1 align="center">Entre estaciones</h1>
 <p align="center">Tu próximo tren en Costa Rica, con sus horas y paradas publicadas.</p>
 
-![Planificador Entre estaciones: consulta de Heredia a San José, tablero de salidas y diagrama de estaciones](docs/desktop.png)
+![Planificador Entre estaciones: viaje de Heredia a Cartago con transbordo automático y mapa de toda la red](docs/desktop.png)
 
-Una guía independiente para consultar trenes de **Alajuela, Heredia, San José, Cartago, Paraíso, Pavas y Belén**. Elegís el corredor, las estaciones, la fecha y la hora; el planificador muestra los servicios directos que tienen parada publicada en ambos extremos.
+Una guía independiente para consultar trenes de **Alajuela, Heredia, San José, Cartago, Paraíso, Pavas y Belén**. Elegís solo el origen, el destino, la fecha y la hora. El planificador busca en toda la red y combina los trenes y transbordos automáticamente, ordenados por hora de llegada.
 
 > **Horarios publicados, sin seguimiento en vivo.** Las imágenes de referencia no indican fecha de vigencia. Confirmá cambios, feriados y tarifas con [INCOFER](https://www.incofer.go.cr/) antes de viajar.
 
 ## El viaje, de un vistazo
 
-- **La próxima salida primero.** Hora de salida, llegada y duración, seguidas por los demás servicios disponibles.
-- **Cada tren tiene sus paradas.** Seleccioná una salida para ver sus horas en el diagrama; podés cambiar origen o destino desde las estaciones.
+- **Las conexiones se calculan solas.** No hay que elegir una línea. El itinerario indica qué tren tomar, dónde bajar, cuánto esperar y qué tren sigue.
+- **La mejor llegada primero.** Hora de salida, llegada, tiempo total y cantidad de transbordos, con alternativas para comparar.
+- **El mapa siempre visible.** Los 34 puntos de toda la red permiten elegir origen o destino; el viaje seleccionado se resalta en dorado.
 - **El día importa.** Zona horaria `America/Costa_Rica`, fines de semana sin servicio regular y búsqueda del próximo día hábil cuando ya pasó el último tren.
 - **Un enlace para tu viaje.** Copiá la consulta con estaciones, fecha y hora, y volvé a abrirla con esos mismos valores.
 - **Claro u oscuro.** Ambos temas funcionan en teléfono, tableta y escritorio, con controles de teclado y movimiento reducido.
@@ -27,6 +28,10 @@ Las capturas muestran una consulta de ejemplo para el **9 de noviembre de 2026 a
 | **Total** | | **94** |
 
 Los servicios parciales conservan sus extremos originales. Una celda ausente significa que no hay hora publicada para esa estación; no se interpolan paradas. Las tarifas se muestran únicamente para las parejas de estaciones impresas en las hojas.
+
+La lista de pasos funciona sin servicios externos. El mapa carga automáticamente las tres líneas, con coordenadas del GTFS de INCOFER / SIMOVI y mapa base de OpenStreetMap. Si falla su carga, los viajes siguen disponibles y aparece un botón para reintentar.
+
+Los transbordos requieren **al menos cinco minutos** entre llegada y salida en la misma estación. Ese margen es una decisión de planificación, no una garantía de INCOFER. Se admiten varios cambios de tren; no se inventan caminatas entre estaciones distintas ni conexiones al día siguiente.
 
 ## Probar en local
 
@@ -54,7 +59,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-La prueba de navegador cubre los tres corredores, ambos sentidos, fechas y casos sin servicio, selección de paradas, enlace compartido, temas, teclado, movimiento reducido, fallos de carga y tamaños de 320 a 1920px. Ejecuta axe para WCAG AA y guarda las capturas en `.shots/`.
+La prueba de navegador cubre transbordos automáticos, los 34 marcadores y la selección de estaciones desde el mapa, fechas y casos sin servicio, enlace compartido, temas, teclado, movimiento reducido, fallos de carga con reintento y tamaños de 320 a 1920px. Ejecuta axe para WCAG AA y guarda las capturas en `.shots/`.
 
 Para otro servidor: `TEST_URL=http://127.0.0.1:4400 npm run test:browser`. Si ya tenés un Chromium compatible, podés indicar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
@@ -66,7 +71,9 @@ app.mjs                 Interacciones, resultados y diagrama
 styles.css              Sistema visual y adaptación a pantallas
 theme.js                Tema del sistema y preferencia local
 map.mjs                 Mapa geográfico de carga opcional
-lib/journeys.mjs         Búsqueda directa y calendario de servicio
+lib/journeys.mjs         Horas y calendario de servicio
+lib/transfers.mjs        Búsqueda automática de conexiones en toda la red
+data/coordinates.mjs    Coordenadas de las 34 estaciones
 data/schedules.mjs      Horarios y tarifas transcritos
 data/sources/           Las cinco hojas de referencia originales
 fuentes.html            Procedencia, límites y acceso a las imágenes
@@ -87,4 +94,4 @@ Antes de publicar, agregá las URL canónicas, las URL absolutas de la imagen so
 
 ---
 
-Esta guía no calcula transbordos ni conoce retrasos, cancelaciones, feriados o cambios posteriores a las imágenes aportadas. Las pruebas de navegador emulan tamaños y condiciones: no sustituyen una revisión en un teléfono real.
+Esta guía calcula transbordos con los horarios publicados, sin conocer retrasos, cancelaciones, feriados o cambios posteriores a las imágenes aportadas. Las pruebas de navegador emulan tamaños y condiciones: no sustituyen una revisión en un teléfono real.
