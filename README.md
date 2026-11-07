@@ -3,20 +3,20 @@
 
 ![Planificador Entre estaciones: viaje de Heredia a Cartago con transbordo automático y mapa de toda la red](docs/desktop.png)
 
-Una guía independiente para consultar trenes de **Alajuela, Heredia, San José, Cartago, Paraíso, Pavas y Belén**. Elegís solo el origen, el destino, la fecha y la hora. El planificador busca en toda la red y combina los trenes y transbordos automáticamente, ordenados por hora de llegada.
+Una guía independiente para consultar trenes de **Alajuela, Heredia, San José, Cartago, Paraíso, Pavas y Belén**. Elegís origen, destino y fecha; los trenes del día aparecen inmediatamente debajo. El planificador combina las líneas y los transbordos automáticamente, ordenados por hora de llegada.
 
 > **Horarios publicados, sin seguimiento en vivo.** Las imágenes de referencia no indican fecha de vigencia. Confirmá cambios, feriados y tarifas con [INCOFER](https://www.incofer.go.cr/) antes de viajar.
 
 ## El viaje, de un vistazo
 
 - **Las conexiones se calculan solas.** No hay que elegir una línea. El itinerario indica qué tren tomar, dónde bajar, cuánto esperar y qué tren sigue.
-- **La mejor llegada primero.** Hora de salida, llegada, tiempo total y cantidad de transbordos, con alternativas para comparar.
+- **Los trenes, justo debajo.** Seis opciones a la vista y el resto con Ver más trenes. Seleccioná una para abrir sus pasos y transbordos.
 - **El mapa siempre visible.** Los 34 puntos de toda la red permiten elegir origen o destino; el viaje seleccionado se resalta en dorado.
-- **El día importa.** Zona horaria `America/Costa_Rica`, fines de semana sin servicio regular y búsqueda del próximo día hábil cuando ya pasó el último tren.
-- **Un enlace para tu viaje.** Copiá la consulta con estaciones, fecha y hora, y volvé a abrirla con esos mismos valores.
+- **Solo la fecha.** Se muestran los horarios de todo el día, sin filtro de hora. Los fines de semana ofrecen consultar el próximo día hábil.
+- **Un enlace para tu viaje.** Copiá la consulta con estaciones y fecha, y volvé a abrirla con esos mismos valores.
 - **Claro u oscuro.** Ambos temas funcionan en teléfono, tableta y escritorio, con controles de teclado y movimiento reducido.
 
-Las capturas muestran una consulta de ejemplo para el **9 de noviembre de 2026 a las 06:00**, no una salida en tiempo real.
+Las capturas muestran los viajes del **9 de noviembre de 2026**, no salidas en tiempo real.
 
 ## Los recorridos
 
