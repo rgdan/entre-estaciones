@@ -10,10 +10,10 @@ Una guía independiente para consultar trenes de **Alajuela, Heredia, San José,
 ## El viaje, de un vistazo
 
 - **Las conexiones se calculan solas.** No hay que elegir una línea. El itinerario indica qué tren tomar, dónde bajar, cuánto esperar y qué tren sigue.
-- **Los trenes, justo debajo.** Seis opciones a la vista y el resto con Ver más trenes. Seleccioná una para abrir sus pasos y transbordos.
+- **Selección explícita.** Cada tren tiene un botón Seleccionar; la opción elegida indica Seleccionado y abre sus pasos y transbordos. Limpiar selección cierra el detalle y quita el resaltado del mapa. Seis resultados a la vista, con acceso al resto.
 - **El mapa siempre visible.** Los 34 puntos de toda la red permiten elegir origen o destino; el viaje seleccionado se resalta en dorado.
 - **Solo la fecha.** Se muestran los horarios de todo el día, sin filtro de hora. Los fines de semana ofrecen consultar el próximo día hábil.
-- **Un enlace para tu viaje.** Copiá la consulta con estaciones y fecha, y volvé a abrirla con esos mismos valores.
+- **Español e inglés.** Cambiá el idioma desde el encabezado. Se traducen los controles, resultados, transbordos y mapa; se conservan los nombres propios. La preferencia se guarda en este navegador.
 - **Claro u oscuro.** Ambos temas funcionan en teléfono, tableta y escritorio, con controles de teclado y movimiento reducido.
 
 Las capturas muestran los viajes del **9 de noviembre de 2026**, no salidas en tiempo real.
@@ -27,7 +27,7 @@ Las capturas muestran los viajes del **9 de noviembre de 2026**, no salidas en t
 | Curridabat / San José / Pavas / Belén | 18 | 20 |
 | **Total** | | **94** |
 
-Los servicios parciales conservan sus extremos originales. Una celda ausente significa que no hay hora publicada para esa estación; no se interpolan paradas. Las tarifas se muestran únicamente para las parejas de estaciones impresas en las hojas.
+Los servicios parciales conservan sus extremos originales. Una celda ausente significa que no hay hora publicada para esa estación; no se interpolan paradas. Las tarifas transcritas se conservan en los datos de referencia.
 
 La lista de pasos funciona sin servicios externos. El mapa carga automáticamente las tres líneas, con coordenadas del GTFS de INCOFER / SIMOVI y mapa base de OpenStreetMap. Si falla su carga, los viajes siguen disponibles y aparece un botón para reintentar.
 
@@ -35,52 +35,59 @@ Los transbordos requieren **al menos cinco minutos** entre llegada y salida en l
 
 ## Probar en local
 
-Necesitás **Python 3** para servir los archivos. La aplicación no requiere instalación de dependencias ni compilación.
-
-```bash
-python3 -m http.server 4173 --bind 127.0.0.1
-```
-
-Abrí **[localhost:4173](http://localhost:4173)**. También podés usar `npm start`. Usá un servidor HTTP: abrir `index.html` con `file://` no permite cargar los módulos.
-
-## Comprobar los cambios
-
-Las pruebas de horarios y búsqueda necesitan **Node.js 22 o superior**, sin paquetes adicionales:
-
-```bash
-node --test tests/*.test.mjs
-```
-
-Para verificar la interfaz, dejá el servidor local encendido en otra terminal:
+Necesitás **Node.js 22.18 o superior** y npm. La aplicación usa **Vue 3 + Vite**.
 
 ```bash
 npm ci
+npm start
+```
+
+Abrí **[localhost:4173](http://localhost:4173)**. Las consultas conservan estaciones, fecha e idioma en la URL.
+
+## Comprobar los cambios
+
+Las pruebas comprueban horarios, transbordos, coordenadas y traducciones:
+
+```bash
+npm test
+```
+
+Para verificar la versión compilada, ejecutá en una terminal:
+
+```bash
+npm run build
+npm run preview
+```
+
+En otra terminal:
+
+```bash
 npx playwright install chromium
 npm run test:browser
 ```
 
-La prueba de navegador cubre transbordos automáticos, los 34 marcadores y la selección de estaciones desde el mapa, fechas y casos sin servicio, enlace compartido, temas, teclado, movimiento reducido, fallos de carga con reintento y tamaños de 320 a 1920px. Ejecuta axe para WCAG AA y guarda las capturas en `.shots/`.
+La prueba de navegador cubre transbordos automáticos, los 34 marcadores y la selección de estaciones desde el mapa, fechas y casos sin servicio, ambos idiomas, selección explícita, preferencias, temas, teclado, movimiento reducido, fallos del mapa con reintento y tamaños de 320 a 1920px. Ejecuta axe para WCAG AA y guarda las capturas en `.shots/`.
 
 Para otro servidor: `TEST_URL=http://127.0.0.1:4400 npm run test:browser`. Si ya tenés un Chromium compatible, podés indicar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
 ## Dentro del proyecto
 
 ```text
-index.html              Planificador y estados de carga
-app.mjs                 Interacciones, resultados y diagrama
+index.html              Entrada de Vite
+src/App.vue             Planificador, preferencias y detalle de viaje
+src/i18n.mjs            Textos en español e inglés
+src/main.js             Inicio de Vue
 styles.css              Sistema visual y adaptación a pantallas
-theme.js                Tema del sistema y preferencia local
-map.mjs                 Mapa geográfico de carga opcional
+map.mjs                 Mapa Leaflet de carga diferida
 lib/journeys.mjs         Horas y calendario de servicio
 lib/transfers.mjs        Búsqueda automática de conexiones en toda la red
 data/coordinates.mjs    Coordenadas de las 34 estaciones
 data/schedules.mjs      Horarios y tarifas transcritos
 data/sources/           Las cinco hojas de referencia originales
-fuentes.html            Procedencia, límites y acceso a las imágenes
 tests/                  Pruebas de datos, búsquedas e interfaz
 ```
 
-Archivo y su licencia OFL se sirven desde `assets/fonts/`; no hay solicitudes a un proveedor de fuentes. Playwright y axe son herramientas de desarrollo, no dependencias de la aplicación.
+Archivo y su licencia OFL se sirven desde `assets/fonts/`; no hay solicitudes a un proveedor de fuentes. Vue y Leaflet se empaquetan con la aplicación. Playwright y axe se usan solo durante el desarrollo.
 
 ## Actualizar horarios
 
@@ -89,6 +96,8 @@ Archivo y su licencia OFL se sirven desde `assets/fonts/`; no hay solicitudes a 
 3. Compará la transcripción completa con la nueva hoja y ejecutá las pruebas.
 
 ## Publicar
+
+Compilá con `npm run build` y publicá el contenido de **`dist/`** en un alojamiento estático. `npm run preview` permite revisar esa misma salida localmente. El aviso de horario no oficial está en el pie de la página; las imágenes originales y la procedencia permanecen en este repositorio.
 
 Antes de publicar, agregá las URL canónicas, las URL absolutas de la imagen social y el sitemap con el dominio real. No hay un dominio de producción configurado ni un despliegue incluido.
 
