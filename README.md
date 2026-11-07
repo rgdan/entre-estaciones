@@ -1,106 +1,24 @@
 <h1 align="center">Entre estaciones</h1>
-<p align="center">Tu próximo tren en Costa Rica, con sus horas y paradas publicadas.</p>
+<p align="center">Trenes y transbordos en Costa Rica.</p>
 
-![Planificador Entre estaciones: viaje de Heredia a Cartago con transbordo automático y mapa de toda la red](docs/desktop.png)
+![Planificador con trenes y mapa de la red](docs/imagenes/desktop.png)
 
-Una guía independiente para consultar trenes de **Alajuela, Heredia, San José, Cartago, Paraíso, Pavas y Belén**. Elegís origen, destino y fecha; los trenes del día aparecen inmediatamente debajo. El planificador combina las líneas y los transbordos automáticamente, ordenados por hora de llegada.
+Seleccione origen, destino y fecha para consultar los trenes del día. El planificador calcula los transbordos y muestra el recorrido en el mapa. Disponible en español e inglés, con temas claro y oscuro.
 
-> **Horarios publicados, sin seguimiento en vivo.** Las imágenes de referencia no indican fecha de vigencia. Confirmá cambios, feriados y tarifas con [INCOFER](https://www.incofer.go.cr/) antes de viajar.
+> Horario no oficial. La vigencia de las imágenes de referencia no está confirmada.
 
-## El viaje, de un vistazo
+## Inicio rápido
 
-- **Las conexiones se calculan solas.** No hay que elegir una línea. El itinerario indica qué tren tomar, dónde bajar, cuánto esperar y qué tren sigue.
-- **Selección explícita.** Cada tren tiene un botón Seleccionar; la opción elegida indica Seleccionado y abre sus pasos y transbordos. Limpiar selección está siempre visible debajo del formulario: borra origen, destino y viaje elegido, conserva la fecha y devuelve el foco al origen. Seis resultados a la vista, con acceso al resto.
-- **El mapa siempre visible.** Los 34 puntos de toda la red permiten elegir origen o destino; el viaje seleccionado se resalta en dorado.
-- **Solo la fecha.** Se muestran los horarios de todo el día, sin filtro de hora. Los fines de semana ofrecen consultar el próximo día hábil.
-- **Español e inglés.** Cambiá el idioma desde el encabezado. Se traducen los controles, resultados, transbordos y mapa; se conservan los nombres propios. La preferencia se guarda en este navegador.
-- **Claro u oscuro.** Ambos temas funcionan en teléfono, tableta y escritorio, con controles de teclado y movimiento reducido.
-
-Las capturas muestran los viajes del **9 de noviembre de 2026**, no salidas en tiempo real.
-
-## Los recorridos
-
-| Corredor | Estaciones | Servicios en ambos sentidos |
-| --- | ---: | ---: |
-| Alajuela / Heredia / San José | 13 | 46 |
-| San José / Cartago / Paraíso | 10 | 28 |
-| Curridabat / San José / Pavas / Belén | 18 | 20 |
-| **Total** | | **94** |
-
-Los servicios parciales conservan sus extremos originales. Una celda ausente significa que no hay hora publicada para esa estación; no se interpolan paradas. Las tarifas transcritas se conservan en los datos de referencia.
-
-La lista de pasos funciona sin servicios externos. El mapa carga automáticamente las tres líneas, con coordenadas del GTFS de INCOFER / SIMOVI y mapa base de OpenStreetMap. Si falla su carga, los viajes siguen disponibles y aparece un botón para reintentar.
-
-Los transbordos requieren **al menos cinco minutos** entre llegada y salida en la misma estación. Ese margen es una decisión de planificación, no una garantía de INCOFER. Se admiten varios cambios de tren; no se inventan caminatas entre estaciones distintas ni conexiones al día siguiente.
-
-## Probar en local
-
-Necesitás **Node.js 22.18 o superior** y **pnpm 12.16.1**. La aplicación usa **Vue 3 + Vite**.
+Requiere Node.js 22.18 o superior y pnpm 12.16.1.
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm start
 ```
 
-Abrí **[localhost:4173](http://localhost:4173)**. Las consultas conservan estaciones, fecha e idioma en la URL.
+Abra [localhost:4173](http://localhost:4173). Para comprobar los cambios, ejecute `pnpm test` y `pnpm build`.
 
-## Comprobar los cambios
+## Documentación
 
-Las pruebas comprueban horarios, transbordos, coordenadas y traducciones:
-
-```bash
-pnpm test
-```
-
-Para verificar la versión compilada, ejecutá en una terminal:
-
-```bash
-pnpm build
-pnpm preview
-```
-
-En otra terminal:
-
-```bash
-pnpm exec playwright install chromium
-pnpm test:browser
-```
-
-La prueba de navegador cubre transbordos automáticos, los 34 marcadores y la selección de estaciones desde el mapa, fechas y casos sin servicio, ambos idiomas, selección explícita, preferencias, temas, teclado, movimiento reducido, fallos del mapa con reintento y tamaños de 320 a 1920px. Ejecuta axe para WCAG AA y guarda las capturas en `.shots/`.
-
-Para otro servidor: `TEST_URL=http://127.0.0.1:4400 pnpm test:browser`. Si ya tenés un Chromium compatible, podés indicar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
-
-## Dentro del proyecto
-
-```text
-index.html              Entrada de Vite
-src/App.vue             Planificador, preferencias y detalle de viaje
-src/i18n.mjs            Textos en español e inglés
-src/main.js             Inicio de Vue
-styles.css              Sistema visual y adaptación a pantallas
-map.mjs                 Mapa Leaflet de carga diferida
-lib/journeys.mjs         Horas y calendario de servicio
-lib/transfers.mjs        Búsqueda automática de conexiones en toda la red
-data/coordinates.mjs    Coordenadas de las 34 estaciones
-data/schedules.mjs      Horarios y tarifas transcritos
-data/sources/           Las cinco hojas de referencia originales
-tests/                  Pruebas de datos, búsquedas e interfaz
-```
-
-Archivo y su licencia OFL se sirven desde `assets/fonts/`; no hay solicitudes a un proveedor de fuentes. Vue y Leaflet se empaquetan con la aplicación. Playwright y axe se usan solo durante el desarrollo.
-
-## Actualizar horarios
-
-1. Sustituí la hoja correspondiente en `data/sources/` y registrá su vigencia, si está disponible.
-2. Actualizá las filas y tarifas en [`data/schedules.mjs`](data/schedules.mjs). Cada fila indica el índice de la primera estación y sus horas consecutivas, en el orden del sentido correspondiente.
-3. Compará la transcripción completa con la nueva hoja y ejecutá las pruebas.
-
-## Publicar
-
-Compilá con `pnpm build` y publicá el contenido de **`dist/`** en un alojamiento estático. `pnpm preview` permite revisar esa misma salida localmente. El aviso de horario no oficial está en el pie de la página; las imágenes originales y la procedencia permanecen en este repositorio.
-
-Antes de publicar, agregá las URL canónicas, las URL absolutas de la imagen social y el sitemap con el dominio real. No hay un dominio de producción configurado ni un despliegue incluido.
-
----
-
-Esta guía calcula transbordos con los horarios publicados, sin conocer retrasos, cancelaciones, feriados o cambios posteriores a las imágenes aportadas. Las pruebas de navegador emulan tamaños y condiciones: no sustituyen una revisión en un teléfono real.
+- [Desarrollo y pruebas](docs/guias/desarrollo.md)
+- [Publicación en GitHub Pages](docs/guias/publicacion.md)
