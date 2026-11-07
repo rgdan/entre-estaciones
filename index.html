@@ -17,7 +17,7 @@
       content="Horarios, transbordos automáticos y mapa de toda la red."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="assets/og.png" />
+    <meta property="og:image" content="/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <title>Entre estaciones · Horarios de tren en Costa Rica</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
@@ -28,124 +28,10 @@
       type="font/woff2"
       crossorigin
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="theme.js"></script>
   </head>
   <body class="simple-planner">
-    <a class="skip-link" href="#horarios">Saltar a los horarios</a>
-    <header class="site-header wrap">
-      <a class="wordmark" href="./">entre<br />estaciones<span>CR</span></a>
-      <nav aria-label="Navegación principal">
-        <a href="fuentes.html">Fuentes</a>
-        <button class="theme-toggle" type="button" aria-pressed="false">
-          Modo oscuro
-        </button>
-      </nav>
-    </header>
-    <main class="wrap" id="horarios">
-      <h1>Horarios de tren</h1>
-      <section class="planner" aria-label="Planificar un viaje">
-        <form id="journey-form">
-          <div class="field">
-            <label for="from">Origen</label
-            ><select id="from" name="from" required disabled>
-              <option>Cargando estaciones…</option>
-            </select>
-          </div>
-          <button
-            class="swap"
-            id="swap"
-            type="button"
-            aria-label="Invertir origen y destino"
-            disabled
-          >
-            ⇄
-          </button>
-          <div class="field">
-            <label for="to">Destino</label
-            ><select id="to" name="to" required disabled>
-              <option>Cargando estaciones…</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="date">Fecha</label
-            ><input id="date" name="date" type="date" required disabled />
-          </div>
-        </form>
-      </section>
-      <div class="journey-layout">
-        <section
-          class="departures"
-          aria-labelledby="departures-title"
-          aria-busy="true"
-          id="departures-section"
-        >
-          <div class="section-heading">
-            <h2 id="departures-title">Trenes</h2>
-            <button id="share" type="button" class="text-button" disabled>
-              Copiar viaje
-            </button>
-          </div>
-          <p
-            class="search-status"
-            id="search-status"
-            role="status"
-            aria-live="polite"
-          ></p>
-          <div id="board" class="search-message"><p>Cargando horarios…</p></div>
-          <div id="more-departures"></div>
-          <details class="full-schedule" id="full-schedule">
-            <summary>Ver más trenes</summary>
-            <div id="all-departures"></div>
-          </details>
-          <details class="journey-details" id="journey-details">
-            <summary>Detalle del viaje</summary>
-            <h3 id="stops-title" tabindex="-1">Trenes y transbordos</h3>
-            <p id="service-label" class="service-label"></p>
-            <ol id="station-diagram" class="station-diagram"></ol>
-            <p class="small">
-              Margen mínimo de 5 minutos entre trenes. Las conexiones no están
-              garantizadas.
-            </p>
-          </details>
-        </section>
-        <section class="network-map" aria-labelledby="map-title">
-          <div class="section-heading"><h2 id="map-title">Mapa</h2></div>
-          <div id="map" aria-label="Mapa de toda la red de trenes"></div>
-          <p class="map-legend">
-            <span class="line-heredia">Alajuela / Heredia</span
-            ><span class="line-cartago">Cartago / Paraíso</span
-            ><span class="line-belen">Pavas / Belén</span>
-          </p>
-          <div id="map-status" role="status">Cargando mapa…</div>
-          <button id="retry-map" class="solid-button" type="button" hidden>
-            Reintentar mapa
-          </button>
-        </section>
-      </div>
-      <p class="schedule-note">
-        Horarios publicados, sin datos en vivo.
-        <a href="fuentes.html">Consultar fuentes y vigencia</a>.
-      </p>
-      <noscript
-        ><p>
-          Para consultar viajes necesitás JavaScript. Podés
-          <a href="fuentes.html">abrir los horarios originales</a> sin
-          activarlo.
-        </p></noscript
-      >
-    </main>
-    <footer class="site-footer wrap">
-      <span>Entre estaciones · Guía independiente de INCOFER.</span>
-    </footer>
-    <script type="module">
-      import("./app.mjs").catch(() => {
-        document.getElementById("board").innerHTML =
-          '<p>No pudimos cargar los horarios. <a href="fuentes.html">Ver hojas originales</a>.</p>';
-        document
-          .getElementById("departures-section")
-          .setAttribute("aria-busy", "false");
-      });
-    </script>
+    <div id="app"></div>
+    <noscript>Activá JavaScript para consultar los horarios. Enable JavaScript to view schedules.</noscript>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
