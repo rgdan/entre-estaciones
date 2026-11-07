@@ -1357,7 +1357,7 @@ summary:hover {
 @media (max-width: 540px) {
   .simple-planner .site-header { flex-wrap: wrap; padding-block: 12px; gap: 8px 12px; }
   .simple-planner .site-header nav { margin-left: auto; }
-  .simple-planner .language-picker { width: 96px; font-size: 12px; }
+  .simple-planner .language-picker { width: 100px; padding: 8px 10px; font-size: 12px; }
   .simple-planner .theme-toggle { white-space: nowrap; }
 }
 #clear-selection { margin-left: 16px; }
