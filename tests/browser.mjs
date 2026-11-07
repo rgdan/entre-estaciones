@@ -82,6 +82,7 @@ try {
   assert.match(await page.locator("#service-label").textContent(), /06:11/);
   await page.locator(".board-button").click();
   assert.match(await page.locator("#service-label").textContent(), /06:01/);
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'stops-title');
   await page.locator("#full-schedule summary").click();
   assert.equal(
     await page.locator("#all-departures .departure-row").count(),

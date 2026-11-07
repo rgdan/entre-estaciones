@@ -303,8 +303,8 @@ button svg {
 .field-hint {
   display: block;
   min-height: 18px;
-  font-size: 11px;
-  font-weight: 400;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
   margin-top: 2px;
 }
@@ -550,6 +550,11 @@ summary:hover {
   line-height: 1.6;
   margin-top: 18px;
   max-width: 52ch;
+}
+.schedule-note a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
 }
 .empty-state {
   padding: 12px 0;
