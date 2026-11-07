@@ -12,7 +12,7 @@ try {
   savedLanguage = localStorage.getItem('entre-estaciones-language');
   savedTheme = localStorage.getItem('entre-estaciones-theme');
 } catch {}
-const language = ref(['en', 'es'].includes(params.get('lang')) ? params.get('lang') : ['en', 'es'].includes(savedLanguage) ? savedLanguage : navigator.language.startsWith('en') ? 'en' : 'es');
+const language = ref(['en', 'es'].includes(params.get('lang')) ? params.get('lang') : ['en', 'es'].includes(savedLanguage) ? savedLanguage : 'es');
 const dark = ref(savedTheme ? savedTheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
 const from = ref(params.get('from') === '' || Object.hasOwn(stationNames, params.get('from')) ? params.get('from') : 'heredia');
 const to = ref(params.get('to') === '' || Object.hasOwn(stationNames, params.get('to')) ? params.get('to') : 'cartago');

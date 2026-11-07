@@ -18,6 +18,12 @@ const axe = async () => {
 };
 try {
   await fs.mkdir('.shots', { recursive: true });
+  const englishBrowser = await browser.newContext({ locale: 'en-US' });
+  const firstVisit = await englishBrowser.newPage();
+  await firstVisit.goto(`${base}/?date=2026-11-09`);
+  await firstVisit.locator('#language').waitFor();
+  assert.equal(await firstVisit.locator('html').getAttribute('lang'), 'es');
+  await englishBrowser.close();
   await page.goto(url('es'));
   await loaded();
   assert.equal((await page.locator('.wordmark').textContent()).trim(), 'entreestaciones');
@@ -28,7 +34,7 @@ try {
   assert.equal(await page.locator('#from').inputValue(), '');
   assert.equal(await page.locator('#to').inputValue(), '');
   assert.equal(await page.locator('#date').inputValue(), '2026-11-09');
-  assert.match(await page.locator('#board').textContent(), /Elegí origen y destino/);
+  assert.match(await page.locator('#board').textContent(), /Elija origen y destino/);
   assert.equal(await page.evaluate(() => document.activeElement.id), 'from');
   await page.locator('#from').selectOption('heredia');
   await page.locator('#to').selectOption('cartago');
@@ -95,6 +101,11 @@ try {
         if (await page.locator('html').getAttribute('data-theme') !== theme) await page.locator('.theme-toggle').click();
         await page.locator('.select-journey').first().click();
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${lang}/${theme}/${width} overflow`);
+        assert.ok(await page.locator('#language').evaluate(element => getComputedStyle(element).backgroundColor === getComputedStyle(document.querySelector('#from')).backgroundColor));
+        if (width <= 390) {
+          const size = await page.locator('#date').boundingBox();
+          assert.ok(size.width <= 180 && size.height === 44);
+        }
         if ([390, 1440].includes(width)) {
           await page.locator('.leaflet-marker-icon').last().waitFor();
           await axe();
