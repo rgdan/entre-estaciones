@@ -25,7 +25,8 @@ const mapElement = ref(null);
 const mapStatus = ref('mapLoading');
 let mapController;
 let disposed = false;
-const notFound = !['/', '/index.html'].includes(location.pathname);
+const baseUrl = import.meta.env.BASE_URL;
+const notFound = ![baseUrl, `${baseUrl}index.html`].includes(location.pathname);
 const t = computed(() => messages[language.value]);
 const station = id => stationLabel(id, language.value);
 const stationIds = computed(() => Object.keys(stationNames).sort((a, b) => station(a).localeCompare(station(b), language.value)));
@@ -99,7 +100,7 @@ onBeforeUnmount(() => { disposed = true; mapController?.destroy(); });
 <template>
   <a class="skip-link" href="#horarios">{{ t.skip }}</a>
   <header class="site-header wrap">
-    <a class="wordmark" href="./">entre<br />estaciones</a>
+    <a class="wordmark" :href="baseUrl">entre<br />estaciones</a>
     <nav :aria-label="t.navigation">
       <select id="language" v-model="language" class="language-picker" :aria-label="t.language">
         <option value="es">Español</option><option value="en">English</option>
@@ -109,7 +110,7 @@ onBeforeUnmount(() => { disposed = true; mapController?.destroy(); });
   </header>
   <main class="wrap" id="horarios">
     <template v-if="notFound">
-      <div class="not-found"><p>404</p><h1>{{ t.notFound }}</h1><a class="solid-button" href="/">{{ t.back }}</a></div>
+      <div class="not-found"><p>404</p><h1>{{ t.notFound }}</h1><a class="solid-button" :href="baseUrl">{{ t.back }}</a></div>
     </template>
     <template v-else>
       <h1>{{ t.title }}</h1>

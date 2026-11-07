@@ -28,6 +28,7 @@ try {
   await loaded();
   assert.equal((await page.locator('.wordmark').textContent()).trim(), 'entreestaciones');
   assert.equal(await page.locator('.wordmark span').count(), 0);
+  assert.equal(await page.locator('.wordmark').getAttribute('href'), new URL(`${base}/`).pathname);
   assert.equal(await page.locator('#from option:not([disabled])').count(), 34);
   assert.ok(await page.locator('#clear-selection').isVisible());
   await page.locator('#clear-selection').click();
@@ -114,6 +115,7 @@ try {
       }
       await page.goto(`${base}/404.html?lang=${lang}`);
       await page.locator('.not-found').waitFor();
+      assert.equal(await page.locator('.not-found a').getAttribute('href'), new URL(`${base}/`).pathname);
       await axe();
     }
   }
