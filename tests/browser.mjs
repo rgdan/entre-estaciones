@@ -16,7 +16,7 @@ const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 await fs.mkdir(".shots", { recursive: true });
 const url = `${base}/?from=heredia&to=cartago&date=2026-11-09&time=06:00`;
-const loaded = async () => page.locator(".board-time").first().waitFor();
+const loaded = async () => page.locator(".departure-row").first().waitFor();
 const layout = async () =>
   assert.ok(
     await page.evaluate(
@@ -47,10 +47,44 @@ try {
   assert.equal(await page.locator("[data-route]").count(), 0);
   assert.equal(await page.locator("#from option").count(), 34);
   assert.equal(await page.locator("#to option").count(), 34);
-  assert.equal(await page.locator(".board-time").last().textContent(), "07:28");
-  assert.match(await page.locator("#board").textContent(), /transbordo/);
-  assert.ok(await page.locator(".transfer-stop").count());
-  await page.locator(".board-button").click();
+  assert.equal(await page.locator('input[type="time"]').count(), 0);
+  assert.equal(
+    await page.locator("#after, #use-now, .search-button").count(),
+    0,
+  );
+  assert.equal(
+    await page.locator("#more-departures .departure-row").count(),
+    6,
+  );
+  assert.equal(
+    await page.locator("#journey-details").getAttribute("open"),
+    null,
+  );
+  assert.ok(
+    await page.evaluate(
+      () =>
+        document.querySelector(".planner").getBoundingClientRect().bottom <=
+        document.querySelector(".departures").getBoundingClientRect().top,
+    ),
+  );
+  assert.ok(
+    await page.evaluate(() =>
+      Boolean(
+        document
+          .querySelector(".departures")
+          .compareDocumentPosition(document.querySelector(".network-map")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ),
+  );
+  const firstJourney = await page
+    .locator(".departure-row")
+    .first()
+    .textContent();
+  assert.match(firstJourney, /07:28/);
+  assert.match(firstJourney, /transbordo/);
+  await page.locator(".departure-row").first().click();
+  assert.ok(await page.locator(".transfer-stop").isVisible());
   assert.equal(
     await page.evaluate(() => document.activeElement.id),
     "stops-title",
@@ -64,35 +98,36 @@ try {
   assert.equal(await page.locator("#to").inputValue(), "heredia");
   await page.locator("#from").selectOption("hospital");
   await page.locator("#to").selectOption("ulatina");
-  assert.ok(await page.locator(".board-time").count());
+  assert.ok(await page.locator(".departure-row").count());
   await page.locator("#to").selectOption("hospital");
   assert.match(await page.locator("#board").textContent(), /dos estaciones/);
   await page.locator("#to").selectOption("cartago");
   await page.locator("#date").fill("2026-11-07");
-  await page.locator(".search-button").click();
   assert.match(await page.locator("#board").textContent(), /fin de semana/);
   await page.locator("#board .solid-button").click();
   assert.equal(await page.locator("#date").inputValue(), "2026-11-09");
-  await page.locator("#after").fill("23:59");
-  await page.locator(".search-button").click();
-  assert.match(
-    await page.locator("#board").textContent(),
-    /No quedan conexiones/,
+  await page.goto(
+    `${base}/?from=heredia&to=cartago&date=2026-11-09&time=23:59`,
   );
-  await page.locator("#after").fill("05:00");
-  await page.locator(".search-button").click();
+  await loaded();
+  assert.equal(
+    await page.locator(".departure-row").first().textContent(),
+    firstJourney,
+  );
+  assert.equal(new URL(page.url()).searchParams.has("time"), false);
+  await page.locator("#from").selectOption("hospital");
   await page.locator("#share").click();
   await page
-    .getByText("Enlace del viaje copiado. Incluye estaciones, fecha y hora.", {
+    .getByText("Enlace del viaje copiado.", {
       exact: true,
     })
     .waitFor();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
   assert.equal(new URL(shared).searchParams.has("route"), false);
+  assert.equal(new URL(shared).searchParams.has("time"), false);
   await page.goto(shared);
   await loaded();
   assert.equal(await page.locator("#from").inputValue(), "hospital");
-  await page.locator("#use-now").click();
   assert.ok(await page.locator("#date").inputValue());
 
   await page.goto(url);
@@ -164,7 +199,7 @@ try {
   await failed.goto(url);
   await failed.locator("#retry-map").waitFor();
   assert.match(await failed.locator("#map-status").textContent(), /No pudimos/);
-  assert.ok(await failed.locator(".board-time").count());
+  assert.ok(await failed.locator(".departure-row").count());
   await failed.locator("#retry-map").click();
   await failed.locator("#retry-map").waitFor();
   await failed.close();
@@ -172,7 +207,7 @@ try {
   await failedData.route("**/data/schedules.mjs", (route) => route.abort());
   await failedData.goto(base);
   await failedData
-    .getByText("No pudimos cargar los horarios.", { exact: true })
+    .getByText("No pudimos cargar los horarios.", { exact: false })
     .waitFor();
   await failedData.close();
   assert.deepEqual(errors, []);

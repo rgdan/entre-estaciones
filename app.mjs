@@ -10,8 +10,6 @@ import { planJourneys } from "./lib/transfers.mjs";
 const $ = (selector) => document.querySelector(selector);
 const params = new URLSearchParams(location.search);
 let selectedJourney;
-let liveTime = !params.has("date") && !params.has("time");
-let lastNow = costaRicaNow();
 const dateLabel = (date) =>
   new Intl.DateTimeFormat("es-CR", {
     day: "numeric",
@@ -37,12 +35,9 @@ for (const id of ["from", "to"]) {
 }
 $("#date").value = validDate(params.get("date") || "")
   ? params.get("date")
-  : lastNow.date;
-$("#after").value = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(params.get("time") || "")
-  ? params.get("time")
-  : lastNow.time;
+  : costaRicaNow().date;
 document
-  .querySelectorAll("#journey-form [disabled], #use-now, #share")
+  .querySelectorAll("#journey-form [disabled], #share")
   .forEach((element) => {
     element.disabled = false;
   });
@@ -52,7 +47,6 @@ function saveSearch() {
     from: $("#from").value,
     to: $("#to").value,
     date: $("#date").value,
-    time: $("#after").value,
   });
   history.replaceState(
     null,
@@ -70,6 +64,8 @@ function departureButton(option, index) {
   button.innerHTML = `<span class="row-time">${option.departure}<span class="row-label">Salida</span></span><span class="row-time">${option.arrival}<span class="row-label">Llegada</span></span><span class="row-duration">${option.duration} min<span class="row-label">${connectionLabel(option)}</span></span>`;
   button.addEventListener("click", () => {
     selectJourney(option);
+    $("#journey-details").open = true;
+    $("#stops-title").focus();
     document
       .querySelectorAll(".departure-row")
       .forEach((row) =>
@@ -87,9 +83,6 @@ function selectJourney(option) {
   $("#service-label").textContent = option
     ? `${option.departure} → ${option.arrival} · ${connectionLabel(option)}`
     : "Elegí un viaje para ver sus trenes y transbordos.";
-  $("#stop-count").textContent = option
-    ? `${option.legs.length} ${option.legs.length === 1 ? "tren" : "trenes"}`
-    : "";
   const list = $("#station-diagram");
   list.replaceChildren();
   option?.legs.forEach((leg, index) => {
@@ -130,11 +123,10 @@ function selectJourney(option) {
 function render() {
   const from = $("#from").value,
     to = $("#to").value,
-    date = $("#date").value,
-    time = $("#after").value;
-  const result = planJourneys(routes, from, to, date, time);
+    date = $("#date").value;
+  const result = planJourneys(routes, from, to, date, "00:00");
   selectedJourney = result.upcoming[0];
-  $("#selected-date").textContent = validDate(date)
+  const selectedDate = validDate(date)
     ? new Intl.DateTimeFormat("es-CR", {
         day: "numeric",
         month: "short",
@@ -143,11 +135,20 @@ function render() {
       }).format(new Date(`${date}T12:00:00Z`))
     : "";
   $("#more-departures").replaceChildren();
-  $("#all-departures").replaceChildren(...result.all.map(departureButton));
-  $("#full-schedule").hidden = !result.all.length;
+  $("#all-departures").replaceChildren(
+    ...result.upcoming
+      .slice(6)
+      .map((option, index) => departureButton(option, index + 6)),
+  );
+  $("#full-schedule").hidden = result.upcoming.length <= 6;
+  $("#full-schedule summary").textContent =
+    `Ver ${Math.max(0, result.upcoming.length - 6)} trenes más`;
+  $("#journey-details").hidden = !selectedJourney;
+  $("#journey-details").open = false;
+  $("#board").hidden = result.state === "ready";
   const messages = {
     invalid: [
-      "Revisá las estaciones, la fecha y la hora.",
+      "Revisá las estaciones y la fecha.",
       "Completá los campos para buscar en toda la red.",
     ],
     same: [
@@ -162,25 +163,19 @@ function render() {
       "No encontramos una conexión publicada.",
       "No hay una combinación de trenes que conecte estas estaciones con el margen de transbordo indicado.",
     ],
-    finished: [
-      "No quedan conexiones a esa hora.",
-      "Probá el próximo día hábil o una hora anterior.",
-    ],
   };
   if (result.state !== "ready") {
     const [title, text] = messages[result.state];
     $("#board").innerHTML =
       `<div class="empty-state"><h3>${title}</h3><p>${text}</p></div>`;
-    if (["weekend", "finished"].includes(result.state)) {
+    if (result.state === "weekend") {
       const next = nextServiceDate(date);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "solid-button";
       button.textContent = `Ver viajes del ${dateLabel(next)}`;
       button.addEventListener("click", () => {
-        liveTime = false;
         $("#date").value = next;
-        $("#after").value = "00:00";
         render();
         $("#date").focus();
       });
@@ -188,38 +183,13 @@ function render() {
     }
     $("#search-status").textContent = title;
   } else {
-    const next = result.upcoming[0];
-    $("#board").innerHTML =
-      `<div class="board-top"><strong>Mejor llegada · ${dateLabel(date)}</strong><span>Desde las ${time}</span></div><div class="board-journey"><div><div class="board-time">${next.departure}</div><div class="board-station">${stationNames[from]}</div></div><span class="journey-connector" aria-hidden="true"></span><div class="board-arrival"><div class="board-time">${next.arrival}</div><div class="board-station">${stationNames[to]}</div></div></div><div class="board-bottom"><span>${next.duration} min en total · ${connectionLabel(next)}</span><button type="button" class="board-button">Ver viaje y transbordos</button></div>`;
-    $("#board .board-button").addEventListener("click", () => {
-      selectJourney(next);
-      $("#stops-title").focus();
-      $("#stops-title").scrollIntoView({ block: "start" });
-    });
     $("#more-departures").replaceChildren(
-      ...result.upcoming
-        .slice(1, 5)
-        .map((option, index) =>
-          departureButton(option, result.all.indexOf(option)),
-        ),
+      ...result.upcoming.slice(0, 6).map(departureButton),
     );
     $("#search-status").textContent =
-      `${result.upcoming.length} opciones el ${dateLabel(date)} desde las ${time}, ordenadas por llegada. Las líneas y los transbordos se calculan automáticamente.`;
+      `${selectedDate} · ${result.upcoming.length} viajes`;
   }
   selectJourney(selectedJourney);
-  $("#fares").replaceChildren(
-    ...routes.flatMap((route) =>
-      route.fares.map((fare) => {
-        const row = document.createElement("div");
-        row.className = "fare-row";
-        row.textContent = `${stationNames[fare.from]} ↔ ${stationNames[fare.to]}`;
-        const amount = document.createElement("strong");
-        amount.textContent = `₡${fare.amount}`;
-        row.append(amount);
-        return row;
-      }),
-    ),
-  );
   $("#departures-section").setAttribute("aria-busy", "false");
   if (result.state !== "invalid") saveSearch();
 }
@@ -228,9 +198,8 @@ $("#journey-form").addEventListener("submit", (event) => {
   event.preventDefault();
   render();
 });
-for (const id of ["from", "to", "date", "after"])
+for (const id of ["from", "to", "date"])
   $(`#${id}`).addEventListener("change", () => {
-    if (["date", "after"].includes(id)) liveTime = false;
     render();
   });
 $("#swap").addEventListener("click", () => {
@@ -239,18 +208,10 @@ $("#swap").addEventListener("click", () => {
   $("#to").value = from;
   render();
 });
-$("#use-now").addEventListener("click", () => {
-  lastNow = costaRicaNow();
-  $("#date").value = lastNow.date;
-  $("#after").value = lastNow.time;
-  liveTime = true;
-  render();
-});
 $("#share").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(location.href);
-    $("#search-status").textContent =
-      "Enlace del viaje copiado. Incluye estaciones, fecha y hora.";
+    $("#search-status").textContent = "Enlace del viaje copiado.";
   } catch {
     $("#search-status").textContent =
       "Copiá el enlace desde la barra de direcciones.";
@@ -277,24 +238,5 @@ async function initializeMap() {
     $("#retry-map").hidden = false;
   }
 }
-function tick() {
-  const now = costaRicaNow();
-  $("#clock").textContent = now.time;
-  $("#clock").dateTime = `${now.date}T${now.time}:00-06:00`;
-  $("#today").textContent = new Intl.DateTimeFormat("es-CR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "America/Costa_Rica",
-  }).format(new Date());
-  if (liveTime && (now.time !== lastNow.time || now.date !== lastNow.date)) {
-    $("#date").value = now.date;
-    $("#after").value = now.time;
-    render();
-  }
-  lastNow = now;
-}
 render();
-tick();
-setInterval(tick, 15000);
 initializeMap();

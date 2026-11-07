@@ -1203,6 +1203,112 @@ summary:hover {
     font-size: 26px;
   }
 }
+.simple-planner .site-header {
+  min-height: 80px;
+}
+.simple-planner h1 {
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  margin: 28px 0 20px;
+}
+.simple-planner #journey-form {
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr) 190px;
+  padding: 20px;
+}
+.simple-planner #journey-form .field,
+.simple-planner #journey-form .swap {
+  grid-column: auto;
+  grid-row: auto;
+}
+.simple-planner .journey-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  margin-top: 24px;
+}
+.simple-planner .section-heading {
+  margin-bottom: 8px;
+}
+.simple-planner .search-status {
+  margin: 0 0 8px;
+}
+.simple-planner .departure-row {
+  min-height: 68px;
+  padding: 12px 8px;
+}
+.simple-planner .network-map {
+  margin-bottom: 0;
+}
+.simple-planner .network-map #map {
+  height: 390px;
+  margin-top: 20px;
+}
+.simple-planner .map-legend {
+  gap: 8px 16px;
+  margin-block: 12px 4px;
+  font-size: 12px;
+}
+.simple-planner .schedule-note {
+  max-width: none;
+  margin: 24px 0 12px;
+  font-size: 12px;
+}
+.simple-planner .site-footer {
+  min-height: 64px;
+}
+.journey-details {
+  border-block: 1px solid var(--line);
+  margin-top: 16px;
+}
+.journey-details[open] {
+  padding-bottom: 16px;
+}
+.search-message {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.simple-planner .empty-state p {
+  color: var(--muted);
+}
+@media (max-width: 800px) {
+  .simple-planner .journey-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .simple-planner #journey-form {
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+  }
+  .simple-planner #journey-form .field:nth-of-type(3) {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 540px) {
+  .simple-planner #journey-form {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    padding: 16px;
+  }
+  .simple-planner #journey-form .field:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .simple-planner #journey-form .field:nth-of-type(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .simple-planner #journey-form .swap {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .simple-planner #journey-form .field:nth-of-type(3) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .simple-planner .network-map #map {
+    height: 320px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *:before,
