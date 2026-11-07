@@ -160,17 +160,6 @@ button svg {
   position: relative;
   text-decoration: none;
   padding-block: 12px;
-  padding-right: 32px;
-}
-.wordmark span {
-  font-size: 11px;
-  letter-spacing: 0;
-  position: absolute;
-  right: 0;
-  top: 14px;
-  border: 1px solid var(--ink);
-  padding: 3px 4px;
-  line-height: 1;
 }
 .wordmark:hover {
   translate: 2px 0;
@@ -1002,12 +991,6 @@ summary:hover {
   }
   .wordmark {
     font-size: 21px;
-    padding-right: 26px;
-  }
-  .wordmark span {
-    font-size: 9px;
-    top: 14px;
-    padding: 2px 3px;
   }
   .site-header nav {
     gap: 12px;

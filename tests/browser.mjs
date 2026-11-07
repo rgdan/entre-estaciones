@@ -20,6 +20,8 @@ try {
   await fs.mkdir('.shots', { recursive: true });
   await page.goto(url('es'));
   await loaded();
+  assert.equal((await page.locator('.wordmark').textContent()).trim(), 'entreestaciones');
+  assert.equal(await page.locator('.wordmark span').count(), 0);
   assert.equal(await page.locator('#from option:not([disabled])').count(), 34);
   assert.ok(await page.locator('#clear-selection').isVisible());
   await page.locator('#clear-selection').click();

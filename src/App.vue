@@ -99,7 +99,7 @@ onBeforeUnmount(() => { disposed = true; mapController?.destroy(); });
 <template>
   <a class="skip-link" href="#horarios">{{ t.skip }}</a>
   <header class="site-header wrap">
-    <a class="wordmark" href="./">entre<br />estaciones<span>CR</span></a>
+    <a class="wordmark" href="./">entre<br />estaciones</a>
     <nav :aria-label="t.navigation">
       <select id="language" v-model="language" class="language-picker" :aria-label="t.language">
         <option value="es">Español</option><option value="en">English</option>
