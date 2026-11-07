@@ -56,17 +56,6 @@
       </section>
 
       <section class="planner" aria-label="Planificar un viaje">
-        <div class="route-tabs" role="group" aria-label="Corredor ferroviario">
-          <button type="button" data-route="heredia" aria-pressed="true">
-            <span class="route-code">ALA</span>Alajuela / Heredia
-          </button>
-          <button type="button" data-route="cartago" aria-pressed="false">
-            <span class="route-code">CAR</span>Cartago / Paraíso
-          </button>
-          <button type="button" data-route="belen" aria-pressed="false">
-            <span class="route-code">BEL</span>Pavas / Belén
-          </button>
-        </div>
         <form id="journey-form">
           <div class="field">
             <label for="from">Origen</label
@@ -105,7 +94,8 @@
         </form>
         <div class="planner-foot">
           <span id="route-name"
-            >Horarios publicados, sin seguimiento en vivo.</span
+            >Toda la red · Líneas y transbordos automáticos · Vigencia sin
+            confirmar</span
           ><button class="text-button" id="use-now" type="button" disabled>
             Usar fecha y hora actual
           </button>
@@ -118,6 +108,26 @@
         role="status"
         aria-live="polite"
       ></p>
+      <section class="network-map" aria-labelledby="map-title">
+        <div class="section-heading">
+          <h2 id="map-title">La red en el mapa</h2>
+        </div>
+        <p class="map-legend">
+          <span class="line-heredia">Alajuela / Heredia</span
+          ><span class="line-cartago">Cartago / Paraíso</span
+          ><span class="line-belen">Pavas / Belén</span>
+        </p>
+        <p class="small">
+          Tocá una estación para elegir origen o destino. El dorado resalta tu
+          viaje. Las líneas unen las paradas; no representan el trazado exacto
+          de las vías.
+        </p>
+        <div id="map-status" role="status">Cargando mapa…</div>
+        <button id="retry-map" class="solid-button" type="button" hidden>
+          Reintentar mapa
+        </button>
+        <div id="map" aria-label="Mapa de toda la red de trenes"></div>
+      </section>
       <div class="journey-layout">
         <section
           class="departures"
@@ -126,7 +136,7 @@
           id="departures-section"
         >
           <div class="section-heading">
-            <h2 id="departures-title">Próximas salidas</h2>
+            <h2 id="departures-title">Opciones de viaje</h2>
             <button id="share" type="button" class="text-button" disabled>
               Copiar viaje
             </button>
@@ -138,12 +148,13 @@
             </div>
           </div>
           <p class="schedule-note">
-            Las hojas no indican fecha de vigencia. <a href="fuentes.html">Revisar fuentes</a>.<br />
+            Las hojas no indican fecha de vigencia.
+            <a href="fuentes.html">Revisar fuentes</a>.<br />
             Estas horas no muestran retrasos ni la posición del tren.
           </p>
           <div id="more-departures"></div>
           <details class="full-schedule" id="full-schedule">
-            <summary>Ver horario completo del tramo</summary>
+            <summary>Ver todas las opciones del día</summary>
             <p class="small">
               Patrón regular de lunes a viernes. Las salidas anteriores a la
               hora consultada también aparecen aquí.
@@ -154,55 +165,19 @@
 
         <section class="route-panel" aria-labelledby="stops-title">
           <div class="section-heading">
-            <h2 id="stops-title">Estaciones del recorrido</h2>
+            <h2 id="stops-title" tabindex="-1">Tu viaje, paso a paso</h2>
             <span id="stop-count" class="small"></span>
           </div>
           <div class="route-panel-body">
             <p id="service-label" class="service-label">
               Seleccioná un servicio para ver sus paradas.
             </p>
-            <fieldset class="endpoint-choice">
-              <legend>Al tocar una estación, cambiar</legend>
-              <label
-                ><input type="radio" name="endpoint" value="from" checked />
-                Origen</label
-              ><label
-                ><input type="radio" name="endpoint" value="to" />
-                Destino</label
-              >
-            </fieldset>
-            <ol id="station-diagram" class="station-diagram"></ol>
-            <button
-              id="toggle-stations"
-              class="text-button"
-              type="button"
-              aria-expanded="false"
-              aria-controls="station-diagram"
-            >
-              Ver todas las estaciones
-            </button>
-            <p class="diagram-key">
-              El tramo resaltado une tu origen y destino. Sin hora significa que
-              ese tren no tiene parada publicada allí.
+            <p class="transfer-note">
+              Incluimos al menos 5 minutos para cambiar de tren en la misma
+              estación. Es un margen de planificación, no una conexión
+              garantizada.
             </p>
-            <a
-              id="station-map"
-              class="map-link"
-              href="https://www.openstreetmap.org/"
-              >Buscar el origen en el mapa</a
-            >
-            <details id="geographic-map">
-              <summary>Mapa geográfico de Alajuela / Heredia</summary>
-              <p class="small">
-                Ubicaciones del prototipo, aproximadas. La línea une estaciones;
-                no representa el trazado exacto de las vías.
-              </p>
-              <div id="map-status" role="status"></div>
-              <div
-                id="map"
-                aria-label="Mapa de las estaciones de Alajuela, Heredia y San José"
-              ></div>
-            </details>
+            <ol id="station-diagram" class="station-diagram"></ol>
           </div>
         </section>
       </div>

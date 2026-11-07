@@ -1,57 +1,40 @@
 import { routes, stationNames } from "./data/schedules.mjs";
 import {
   costaRicaNow,
-  journey,
   minutes,
   nextServiceDate,
   validDate,
 } from "./lib/journeys.mjs";
+import { planJourneys } from "./lib/transfers.mjs";
 
 const $ = (selector) => document.querySelector(selector);
 const params = new URLSearchParams(location.search);
-let route = routes.find((item) => item.id === params.get("route")) || routes[0];
-let selectedTrip;
-let showAllStations = false;
+let selectedJourney;
 let liveTime = !params.has("date") && !params.has("time");
 let lastNow = costaRicaNow();
-const defaults = {
-  heredia: ["heredia", "atlantico"],
-  cartago: ["atlantico", "cartago"],
-  belen: ["pacifico", "belen"],
-};
 const dateLabel = (date) =>
   new Intl.DateTimeFormat("es-CR", {
     day: "numeric",
     month: "short",
     timeZone: "UTC",
   }).format(new Date(`${date}T12:00:00Z`));
-const currency = (amount) =>
-  new Intl.NumberFormat("es-CR", {
-    style: "currency",
-    currency: "CRC",
-    maximumFractionDigits: 0,
-  }).format(amount);
-
-function setStations(from, to) {
-  for (const id of ["from", "to"]) {
-    const select = $(`#${id}`);
-    select.replaceChildren(
-      ...route.stations.map(
-        (station) => new Option(stationNames[station], station),
-      ),
-    );
-    select.value = id === "from" ? from : to;
-  }
-}
-
-setStations(
-  route.stations.includes(params.get("from"))
-    ? params.get("from")
-    : defaults[route.id][0],
-  route.stations.includes(params.get("to"))
-    ? params.get("to")
-    : defaults[route.id][1],
+const connectionLabel = (option) =>
+  option.transfers
+    ? `${option.transfers} ${option.transfers === 1 ? "transbordo" : "transbordos"}`
+    : "Tren directo";
+const stationIds = Object.keys(stationNames).sort((a, b) =>
+  stationNames[a].localeCompare(stationNames[b], "es"),
 );
+for (const id of ["from", "to"]) {
+  $(`#${id}`).replaceChildren(
+    ...stationIds.map((station) => new Option(stationNames[station], station)),
+  );
+  $(`#${id}`).value = stationIds.includes(params.get(id))
+    ? params.get(id)
+    : id === "from"
+      ? "heredia"
+      : "cartago";
+}
 $("#date").value = validDate(params.get("date") || "")
   ? params.get("date")
   : lastNow.date;
@@ -66,7 +49,6 @@ document
 
 function saveSearch() {
   const search = new URLSearchParams({
-    route: route.id,
     from: $("#from").value,
     to: $("#to").value,
     date: $("#date").value,
@@ -79,110 +61,79 @@ function saveSearch() {
   );
 }
 
-function departureButton(entry) {
+function departureButton(option, index) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "departure-row";
-  button.setAttribute("aria-pressed", String(entry.trip === selectedTrip));
-  button.innerHTML = `<span class="row-time">${entry.departure}<span class="row-label">Salida</span></span><span class="row-time">${entry.arrival}<span class="row-label">Llegada</span></span><span class="row-duration">${entry.duration} min<span class="row-label">Ver paradas</span></span>`;
-  button.addEventListener("click", () => selectTrip(entry.trip));
-  button.dataset.departure = entry.departure;
+  button.dataset.option = index;
+  button.setAttribute("aria-pressed", String(option === selectedJourney));
+  button.innerHTML = `<span class="row-time">${option.departure}<span class="row-label">Salida</span></span><span class="row-time">${option.arrival}<span class="row-label">Llegada</span></span><span class="row-duration">${option.duration} min<span class="row-label">${connectionLabel(option)}</span></span>`;
+  button.addEventListener("click", () => {
+    selectJourney(option);
+    document
+      .querySelectorAll(".departure-row")
+      .forEach((row) =>
+        row.setAttribute(
+          "aria-pressed",
+          String(row.dataset.option === String(index)),
+        ),
+      );
+  });
   return button;
 }
 
-function selectTrip(trip) {
-  selectedTrip = trip;
-  renderDiagram();
-  document
-    .querySelectorAll(".departure-row")
-    .forEach((button) =>
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.departure === trip[$("#from").value]),
-      ),
-    );
-  $("#search-status").textContent =
-    `Paradas seleccionadas: salida ${trip[$("#from").value]}, llegada ${trip[$("#to").value]}.`;
-}
-
-function renderDiagram() {
-  const from = $("#from").value;
-  const to = $("#to").value;
-  const fromIndex = route.stations.indexOf(from);
-  const toIndex = route.stations.indexOf(to);
-  const order =
-    fromIndex <= toIndex ? route.stations : [...route.stations].reverse();
-  const low = Math.min(fromIndex, toIndex);
-  const high = Math.max(fromIndex, toIndex);
-  $("#stop-count").textContent =
-    `${showAllStations ? route.stations.length : high - low + 1} estaciones`;
-  $("#toggle-stations").textContent = showAllStations
-    ? "Ver solo el tramo elegido"
-    : `Ver todas las estaciones (${route.stations.length})`;
-  $("#toggle-stations").setAttribute("aria-expanded", String(showAllStations));
-  $("#service-label").textContent = selectedTrip
-    ? `Paradas del servicio ${selectedTrip[from]} → ${selectedTrip[to]}`
-    : "Recorrido de la ruta. No hay un servicio seleccionado.";
-  $("#station-diagram").replaceChildren(
-    ...order
-      .filter(
-        (station) =>
-          showAllStations ||
-          (route.stations.indexOf(station) >= low &&
-            route.stations.indexOf(station) <= high),
-      )
-      .map((station) => {
-        const item = document.createElement("li");
-        const index = route.stations.indexOf(station);
-        item.classList.toggle("in-range", index >= low && index <= high);
-        item.classList.toggle("endpoint", station === from || station === to);
-        const button = document.createElement("button");
-        button.type = "button";
-        const label = document.createElement("span");
-        label.textContent = stationNames[station];
-        if (station === from || station === to) {
-          const tag = document.createElement("span");
-          tag.className = "endpoint-tag";
-          tag.textContent =
-            station === from && station === to
-              ? "Origen y destino"
-              : station === from
-                ? "Origen"
-                : "Destino";
-          label.append(tag);
-        }
-        const time = document.createElement("span");
-        time.className = "station-time";
-        time.textContent = selectedTrip?.[station] || "Sin hora";
-        button.append(label, time);
-        button.addEventListener("click", () => {
-          const endpoint = $('input[name="endpoint"]:checked').value;
-          $(`#${endpoint}`).value = station;
-          render();
-          $(`#${endpoint}`).focus();
-        });
-        item.append(button);
-        return item;
-      }),
-  );
-  $("#station-map").href =
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${stationNames[from]} tren Costa Rica`)}`;
-  $("#station-map").textContent = `Buscar ${stationNames[from]} en el mapa`;
-  $("#geographic-map").hidden = route.id !== "heredia";
-  if (route.id !== "heredia") $("#geographic-map").open = false;
+function selectJourney(option) {
+  selectedJourney = option;
+  $("#service-label").textContent = option
+    ? `${option.departure} → ${option.arrival} · ${connectionLabel(option)}`
+    : "Elegí un viaje para ver sus trenes y transbordos.";
+  $("#stop-count").textContent = option
+    ? `${option.legs.length} ${option.legs.length === 1 ? "tren" : "trenes"}`
+    : "";
+  const list = $("#station-diagram");
+  list.replaceChildren();
+  option?.legs.forEach((leg, index) => {
+    if (index) {
+      const previous = option.legs[index - 1];
+      const change = document.createElement("li");
+      change.className = "transfer-stop";
+      change.textContent = `Transbordo en ${stationNames[leg.from]}: bajá a las ${previous.arrival} y tomá el siguiente tren a las ${leg.departure}. Espera: ${minutes(leg.departure) - minutes(previous.arrival)} min.`;
+      list.append(change);
+    }
+    const heading = document.createElement("li");
+    heading.className = "leg-heading";
+    heading.textContent = `${leg.routeName} · ${leg.departure} → ${leg.arrival}`;
+    list.append(heading);
+    const stops = Object.keys(leg.trip);
+    for (const station of stops.slice(
+      stops.indexOf(leg.from),
+      stops.indexOf(leg.to) + 1,
+    )) {
+      const item = document.createElement("li");
+      item.className = `in-range${station === leg.from || station === leg.to ? " endpoint" : ""}`;
+      const label = document.createElement("span");
+      label.textContent = stationNames[station];
+      const time = document.createElement("span");
+      time.className = "station-time";
+      time.textContent = leg.trip[station];
+      item.append(label, time);
+      list.append(item);
+    }
+  });
   document.dispatchEvent(
-    new CustomEvent("journey-selection", { detail: { from, to } }),
+    new CustomEvent("journey-selection", {
+      detail: { from: $("#from").value, to: $("#to").value, itinerary: option },
+    }),
   );
 }
 
 function render() {
-  const from = $("#from").value;
-  const to = $("#to").value;
-  const date = $("#date").value;
-  const time = $("#after").value;
-  const result = journey(route, from, to, date, time);
-  selectedTrip = result.upcoming[0]?.trip;
-  $("#route-name").textContent = `${route.name} · Vigencia sin confirmar`;
+  const from = $("#from").value,
+    to = $("#to").value,
+    date = $("#date").value,
+    time = $("#after").value;
+  const result = planJourneys(routes, from, to, date, time);
+  selectedJourney = result.upcoming[0];
   $("#selected-date").textContent = validDate(date)
     ? new Intl.DateTimeFormat("es-CR", {
         day: "numeric",
@@ -191,21 +142,13 @@ function render() {
         timeZone: "UTC",
       }).format(new Date(`${date}T12:00:00Z`))
     : "";
-  document
-    .querySelectorAll("[data-route]")
-    .forEach((button) =>
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.route === route.id),
-      ),
-    );
   $("#more-departures").replaceChildren();
   $("#all-departures").replaceChildren(...result.all.map(departureButton));
   $("#full-schedule").hidden = !result.all.length;
   const messages = {
     invalid: [
-      "Revisá la fecha y la hora.",
-      "Completá ambos campos con una fecha y hora válidas.",
+      "Revisá las estaciones, la fecha y la hora.",
+      "Completá los campos para buscar en toda la red.",
     ],
     same: [
       "Elegí dos estaciones distintas.",
@@ -213,15 +156,15 @@ function render() {
     ],
     weekend: [
       "El fin de semana, sin servicio regular.",
-      "Los horarios aportados son de lunes a viernes. Podés consultar el próximo día hábil.",
+      "Los horarios aportados son de lunes a viernes.",
     ],
     none: [
-      "Este tramo no tiene un tren directo.",
-      "Ningún servicio publicado se detiene en ambas estaciones en este sentido. Probá otro origen o destino.",
+      "No encontramos una conexión publicada.",
+      "No hay una combinación de trenes que conecte estas estaciones con el margen de transbordo indicado.",
     ],
     finished: [
-      "Por hoy, pasó el último tren.",
-      "No quedan salidas después de la hora que elegiste. El horario completo sigue disponible abajo.",
+      "No quedan conexiones a esa hora.",
+      "Probá el próximo día hábil o una hora anterior.",
     ],
   };
   if (result.state !== "ready") {
@@ -231,9 +174,9 @@ function render() {
     if (["weekend", "finished"].includes(result.state)) {
       const next = nextServiceDate(date);
       const button = document.createElement("button");
-      button.className = "solid-button";
       button.type = "button";
-      button.textContent = `Ver salidas del ${dateLabel(next)}`;
+      button.className = "solid-button";
+      button.textContent = `Ver viajes del ${dateLabel(next)}`;
       button.addEventListener("click", () => {
         liveTime = false;
         $("#date").value = next;
@@ -246,55 +189,41 @@ function render() {
     $("#search-status").textContent = title;
   } else {
     const next = result.upcoming[0];
-    const difference = minutes(next.departure) - minutes(time);
-    const wait = !liveTime
-      ? `Desde las ${time}`
-      : difference === 0
-        ? "A la hora consultada"
-        : `En ${difference >= 60 ? `${Math.floor(difference / 60)} h ` : ""}${difference % 60} min`;
     $("#board").innerHTML =
-      `<div class="board-top"><strong>Próxima salida · ${dateLabel(date)}</strong><span>${wait}</span></div><div class="board-journey"><div><div class="board-time">${next.departure}</div><div class="board-station">${stationNames[from]}</div></div><span class="journey-connector" aria-hidden="true"></span><div class="board-arrival"><div class="board-time">${next.arrival}</div><div class="board-station">${stationNames[to]}</div></div></div><div class="board-bottom"><span>${next.duration} min de viaje · Tren directo</span><button type="button" class="board-button">Ver estas paradas</button></div>`;
+      `<div class="board-top"><strong>Mejor llegada · ${dateLabel(date)}</strong><span>Desde las ${time}</span></div><div class="board-journey"><div><div class="board-time">${next.departure}</div><div class="board-station">${stationNames[from]}</div></div><span class="journey-connector" aria-hidden="true"></span><div class="board-arrival"><div class="board-time">${next.arrival}</div><div class="board-station">${stationNames[to]}</div></div></div><div class="board-bottom"><span>${next.duration} min en total · ${connectionLabel(next)}</span><button type="button" class="board-button">Ver viaje y transbordos</button></div>`;
     $("#board .board-button").addEventListener("click", () => {
-      selectTrip(next.trip);
-      $("#stops-title").setAttribute("tabindex", "-1");
+      selectJourney(next);
       $("#stops-title").focus();
       $("#stops-title").scrollIntoView({ block: "start" });
     });
     $("#more-departures").replaceChildren(
-      ...result.upcoming.slice(1, 5).map(departureButton),
+      ...result.upcoming
+        .slice(1, 5)
+        .map((option, index) =>
+          departureButton(option, result.all.indexOf(option)),
+        ),
     );
     $("#search-status").textContent =
-      `${result.upcoming.length} ${result.upcoming.length === 1 ? "salida disponible" : "salidas disponibles"} el ${dateLabel(date)} a partir de las ${time}.`;
+      `${result.upcoming.length} opciones el ${dateLabel(date)} desde las ${time}, ordenadas por llegada. Las líneas y los transbordos se calculan automáticamente.`;
   }
+  selectJourney(selectedJourney);
   $("#fares").replaceChildren(
-    ...route.fares.map((fare) => {
-      const row = document.createElement("div");
-      row.className = "fare-row";
-      const label = document.createElement("span");
-      label.textContent = `${stationNames[fare.from]} ↔ ${stationNames[fare.to]}`;
-      const amount = document.createElement("strong");
-      amount.textContent = currency(fare.amount);
-      row.append(label, amount);
-      return row;
-    }),
+    ...routes.flatMap((route) =>
+      route.fares.map((fare) => {
+        const row = document.createElement("div");
+        row.className = "fare-row";
+        row.textContent = `${stationNames[fare.from]} ↔ ${stationNames[fare.to]}`;
+        const amount = document.createElement("strong");
+        amount.textContent = `₡${fare.amount}`;
+        row.append(amount);
+        return row;
+      }),
+    ),
   );
-  renderDiagram();
   $("#departures-section").setAttribute("aria-busy", "false");
   if (result.state !== "invalid") saveSearch();
 }
 
-document.querySelectorAll("[data-route]").forEach((button) =>
-  button.addEventListener("click", () => {
-    route = routes.find((item) => item.id === button.dataset.route);
-    showAllStations = false;
-    setStations(...defaults[route.id]);
-    render();
-  }),
-);
-$("#toggle-stations").addEventListener("click", () => {
-  showAllStations = !showAllStations;
-  renderDiagram();
-});
 $("#journey-form").addEventListener("submit", (event) => {
   event.preventDefault();
   render();
@@ -324,20 +253,30 @@ $("#share").addEventListener("click", async () => {
       "Enlace del viaje copiado. Incluye estaciones, fecha y hora.";
   } catch {
     $("#search-status").textContent =
-      "No pudimos copiarlo. Copiá el enlace desde la barra de direcciones.";
+      "Copiá el enlace desde la barra de direcciones.";
   }
 });
-$("#geographic-map").addEventListener("toggle", async () => {
-  if (!$("#geographic-map").open) return;
+$("#retry-map").addEventListener("click", initializeMap);
+async function initializeMap() {
+  $("#retry-map").hidden = true;
   try {
     const { showMap } = await import("./map.mjs");
-    await showMap($("#from").value, $("#to").value);
+    await showMap();
+    document.dispatchEvent(
+      new CustomEvent("journey-selection", {
+        detail: {
+          from: $("#from").value,
+          to: $("#to").value,
+          itinerary: selectedJourney,
+        },
+      }),
+    );
   } catch {
     $("#map-status").textContent =
-      "No pudimos cargar el mapa. El diagrama y los horarios siguen disponibles.";
+      "No pudimos cargar el mapa. Podés seguir consultando viajes y reintentar.";
+    $("#retry-map").hidden = false;
   }
-});
-
+}
 function tick() {
   const now = costaRicaNow();
   $("#clock").textContent = now.time;
@@ -358,3 +297,4 @@ function tick() {
 render();
 tick();
 setInterval(tick, 15000);
+initializeMap();

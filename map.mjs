@@ -1,38 +1,48 @@
-import { stationNames } from "./data/schedules.mjs";
+import { routes, stationNames } from "./data/schedules.mjs";
+import { coordinates } from "./data/coordinates.mjs";
 
-// Coordinates retained from the original prototype; not surveyed station entrances.
-const stations = [
-  ["hospital", 10.00854, -84.20918],
-  ["aeropuerto", 10.001578793269504, -84.19525690460804],
-  ["riosegundo", 10.00272, -84.1842],
-  ["sanjoaquin", 10.00319, -84.1524],
-  ["sanfrancisco", 9.99482, -84.1293],
-  ["heredia", 9.9948, -84.1174],
-  ["miraflores", 9.98738, -84.10896],
-  ["santarosa", 9.97215, -84.09825],
-  ["colima", 9.95783, -84.08814],
-  ["calleblancos", 9.9461, -84.073],
-  ["atlantico", 9.93481, -84.06884],
-  ["ucr", 9.93409, -84.05262],
-  ["ulatina", 9.93261, -84.04415],
-];
+const stations = Object.entries(coordinates).map(([id, point]) => [
+  id,
+  ...point,
+]);
+const colors = { heredia: "#ac2434", cartago: "#234f96", belen: "#367143" };
 let map;
 let segment;
 let loading;
 
-function updateSelection(from, to) {
+function updateSelection(from, to, itinerary) {
   if (!map) return;
-  const start = stations.findIndex((station) => station[0] === from);
-  const end = stations.findIndex((station) => station[0] === to);
-  if (start < 0 || end < 0) return;
-  segment.setLatLngs(
-    stations
-      .slice(Math.min(start, end), Math.max(start, end) + 1)
-      .map((station) => station.slice(1)),
-  );
+  segment.clearLayers();
+  for (const leg of itinerary?.legs || []) {
+    const stops = Object.keys(leg.trip);
+    const points = stops
+      .slice(stops.indexOf(leg.from), stops.indexOf(leg.to) + 1)
+      .map((id) => coordinates[id]);
+    window.L.polyline(points, {
+      color: "#e6b94b",
+      weight: 7,
+      opacity: 1,
+    }).addTo(segment);
+    window.L.circleMarker(coordinates[leg.from], {
+      radius: 9,
+      color: "#182c3d",
+      fillColor: "#e6b94b",
+      fillOpacity: 1,
+    })
+      .bindTooltip(`${stationNames[leg.from]} · ${leg.departure}`)
+      .addTo(segment);
+  }
+  if (coordinates[from] && coordinates[to]) {
+    window.L.circleMarker(coordinates[to], {
+      radius: 9,
+      color: "#182c3d",
+      fillColor: "#e6b94b",
+      fillOpacity: 1,
+    }).addTo(segment);
+  }
 }
 
-export async function showMap(from, to) {
+export async function showMap() {
   if (!map) {
     if (!loading)
       loading = loadMap().catch((error) => {
@@ -42,7 +52,6 @@ export async function showMap(from, to) {
     await loading;
   }
   map.invalidateSize();
-  updateSelection(from, to);
 }
 
 async function loadMap() {
@@ -88,9 +97,16 @@ async function loadMap() {
     status.textContent =
       "No se pudo cargar parte del mapa base. Las estaciones siguen disponibles en el diagrama.";
   });
-  const coordinates = stations.map((station) => station.slice(1));
-  L.polyline(coordinates, { color: "#647580", weight: 3 }).addTo(map);
-  segment = L.polyline([], { color: "#a37916", weight: 5 }).addTo(map);
+  const points = stations.map((station) => station.slice(1));
+  for (const route of routes) {
+    L.polyline(
+      route.stations.map((id) => coordinates[id]),
+      { color: colors[route.id], weight: 4, opacity: 0.8 },
+    )
+      .bindTooltip(route.name)
+      .addTo(map);
+  }
+  segment = L.featureGroup().addTo(map);
   for (const [id, latitude, longitude] of stations) {
     const marker = L.marker([latitude, longitude], {
       icon: L.divIcon({
@@ -121,9 +137,9 @@ async function loadMap() {
     }
     marker.bindPopup(popup);
   }
-  map.fitBounds(coordinates, { padding: [20, 20] });
+  map.fitBounds(points, { padding: [20, 20] });
   status.textContent = "Tocá una estación para elegir origen o destino.";
   document.addEventListener("journey-selection", (event) =>
-    updateSelection(event.detail.from, event.detail.to),
+    updateSelection(event.detail.from, event.detail.to, event.detail.itinerary),
   );
 }

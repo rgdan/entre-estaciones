@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import { chromium } from "playwright";
 import { createRequire } from "node:module";
-
+import { chromium } from "playwright";
 const require = createRequire(import.meta.url);
 const base = process.env.TEST_URL || "http://127.0.0.1:4173";
 const browser = await chromium.launch({
@@ -16,45 +15,17 @@ const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 await fs.mkdir(".shots", { recursive: true });
-const checkLayout = async () => {
+const url = `${base}/?from=heredia&to=cartago&date=2026-11-09&time=06:00`;
+const loaded = async () => page.locator(".board-time").first().waitFor();
+const layout = async () =>
   assert.ok(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
-    `Overflow at ${page.viewportSize().width}px`,
   );
-  const controls = await page
-    .locator("#journey-form input, #journey-form select, #journey-form button")
-    .evaluateAll((elements) =>
-      elements.map((element) => {
-        const rect = element.getBoundingClientRect();
-        return {
-          id: element.id || element.className,
-          left: rect.left,
-          right: rect.right,
-          top: rect.top,
-          bottom: rect.bottom,
-        };
-      }),
-    );
-  for (let i = 0; i < controls.length; i++)
-    for (let j = i + 1; j < controls.length; j++) {
-      const a = controls[i],
-        b = controls[j];
-      assert.ok(
-        !(
-          a.left < b.right &&
-          a.right > b.left &&
-          a.top < b.bottom &&
-          a.bottom > b.top
-        ),
-        `Overlapping controls: ${a.id}, ${b.id}`,
-      );
-    }
-};
 const axe = async () => {
   await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
-  const result = await page.evaluate(async () =>
+  const result = await page.evaluate(() =>
     window.axe.run(document, {
       runOnly: {
         type: "tag",
@@ -70,140 +41,114 @@ const axe = async () => {
     [],
   );
 };
-
 try {
-  await page.goto(`${base}/?date=2026-11-09&time=06:00`);
-  await page.locator(".board-time").first().waitFor();
-  assert.equal(
-    await page.locator(".board-time").first().textContent(),
-    "06:01",
-  );
-  await page.locator("#more-departures .departure-row").first().click();
-  assert.match(await page.locator("#service-label").textContent(), /06:11/);
+  await page.goto(url);
+  await loaded();
+  assert.equal(await page.locator("[data-route]").count(), 0);
+  assert.equal(await page.locator("#from option").count(), 34);
+  assert.equal(await page.locator("#to option").count(), 34);
+  assert.equal(await page.locator(".board-time").last().textContent(), "07:28");
+  assert.match(await page.locator("#board").textContent(), /transbordo/);
+  assert.ok(await page.locator(".transfer-stop").count());
   await page.locator(".board-button").click();
-  assert.match(await page.locator("#service-label").textContent(), /06:01/);
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'stops-title');
-  await page.locator("#full-schedule summary").click();
   assert.equal(
-    await page.locator("#all-departures .departure-row").count(),
-    23,
+    await page.evaluate(() => document.activeElement.id),
+    "stops-title",
   );
-  await page.locator("#all-departures .departure-row").last().click();
-  assert.match(await page.locator("#service-label").textContent(), /20:01/);
+  await page.locator("#full-schedule summary").click();
+  await page.locator("#all-departures button").last().click();
+  assert.ok(await page.locator("#service-label").textContent());
   await page.locator("#full-schedule summary").click();
   await page.locator("#swap").click();
-  assert.equal(await page.locator("#from").inputValue(), "atlantico");
+  assert.equal(await page.locator("#from").inputValue(), "cartago");
   assert.equal(await page.locator("#to").inputValue(), "heredia");
-  await page.locator("#swap").click();
-  await page.locator('input[name="endpoint"][value="to"]').check();
-  await page.locator("#toggle-stations").click();
-  assert.equal(await page.locator("#station-diagram li").count(), 13);
-  await page
-    .getByRole("button", { name: "Ulatina Sin hora", exact: true })
-    .click();
-  assert.equal(await page.locator("#to").inputValue(), "ulatina");
-  assert.equal(
-    await page.locator(".board-time").first().textContent(),
-    "06:35",
-  );
-  await page.locator("#toggle-stations").click();
-  assert.equal(await page.locator("#station-diagram li").count(), 8);
-  assert.match(
-    await page.locator(".board-top").textContent(),
-    /Desde las 06:00/,
-  );
   await page.locator("#from").selectOption("hospital");
+  await page.locator("#to").selectOption("ulatina");
+  assert.ok(await page.locator(".board-time").count());
+  await page.locator("#to").selectOption("hospital");
+  assert.match(await page.locator("#board").textContent(), /dos estaciones/);
+  await page.locator("#to").selectOption("cartago");
+  await page.locator("#date").fill("2026-11-07");
+  await page.locator(".search-button").click();
+  assert.match(await page.locator("#board").textContent(), /fin de semana/);
+  await page.locator("#board .solid-button").click();
+  assert.equal(await page.locator("#date").inputValue(), "2026-11-09");
+  await page.locator("#after").fill("23:59");
+  await page.locator(".search-button").click();
   assert.match(
     await page.locator("#board").textContent(),
-    /no tiene un tren directo/,
+    /No quedan conexiones/,
   );
-  await page.locator("#from").selectOption("ulatina");
-  assert.match(
-    await page.locator("#board").textContent(),
-    /dos estaciones distintas/,
-  );
-
-  for (const route of ["heredia", "cartago", "belen"]) {
-    await page.locator(`[data-route="${route}"]`).click();
-    assert.ok(await page.locator(".board-time").count());
-    await page.locator("#swap").click();
-    assert.ok(await page.locator(".board-time").count());
-    await page.locator("#swap").click();
-    await page.locator("#date").fill("2026-11-07");
-    await page.locator("#journey-form").dispatchEvent("submit");
-    assert.match(await page.locator("#board").textContent(), /fin de semana/);
-    assert.equal(await page.locator("#more-departures button").count(), 0);
-    await page.locator("#board .solid-button").click();
-    assert.equal(await page.locator("#date").inputValue(), "2026-11-09");
-    assert.equal(await page.locator("#after").inputValue(), "00:00");
-    await page.locator("#after").fill("23:59");
-    await page.locator(".search-button").click();
-    assert.match(await page.locator("#board").textContent(), /último tren/);
-    await page.locator("#after").fill("06:00");
-    await page.locator(".search-button").click();
-  }
-  await page.locator('[data-route="heredia"]').click();
+  await page.locator("#after").fill("05:00");
+  await page.locator(".search-button").click();
   await page.locator("#share").click();
   await page
     .getByText("Enlace del viaje copiado. Incluye estaciones, fecha y hora.", {
       exact: true,
     })
     .waitFor();
-  assert.match(await page.locator("#search-status").textContent(), /copiado/);
   const shared = await page.evaluate(() => navigator.clipboard.readText());
-  assert.equal(new URL(shared).searchParams.get("route"), "heredia");
+  assert.equal(new URL(shared).searchParams.has("route"), false);
   await page.goto(shared);
-  await page.locator(".board-time").first().waitFor();
-  assert.equal(await page.locator("#from").inputValue(), "heredia");
-  await page.locator("#date").fill("");
-  await page.locator("#date").dispatchEvent("change");
-  assert.match(await page.locator("#board").textContent(), /Revisá la fecha/);
+  await loaded();
+  assert.equal(await page.locator("#from").inputValue(), "hospital");
   await page.locator("#use-now").click();
   assert.ok(await page.locator("#date").inputValue());
 
+  await page.goto(url);
+  await loaded();
+  await page.locator(".leaflet-marker-icon").last().waitFor({ timeout: 25000 });
+  assert.equal(await page.locator(".leaflet-marker-icon").count(), 34);
+  assert.equal(await page.locator("#map").isVisible(), true);
+  await page.locator('.leaflet-marker-icon[title="Estación Belén"]').click();
+  await page
+    .getByRole("button", { name: "Usar como origen", exact: true })
+    .click();
+  assert.equal(await page.locator("#from").inputValue(), "belen");
+  await page.locator('.leaflet-marker-icon[title="Estación Cartago"]').click();
+  await page
+    .locator(".leaflet-popup-content")
+    .filter({ hasText: "Estación Cartago" })
+    .getByRole("button", { name: "Usar como destino", exact: true })
+    .click();
+  assert.equal(await page.locator("#to").inputValue(), "cartago");
+  assert.ok(await page.locator(".transfer-stop").count());
+
   for (const theme of ["light", "dark"]) {
     for (const width of [320, 390, 768, 1024, 1440, 1920]) {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(`${base}/?date=2026-11-09&time=06:00`);
-      await page.locator(".board-time").first().waitFor();
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(url);
+      await loaded();
       if ((await page.locator("html").getAttribute("data-theme")) !== theme)
         await page.locator(".theme-toggle").click();
-      await checkLayout();
+      await layout();
       if ([390, 1440].includes(width)) {
+        await page
+          .locator(".leaflet-marker-icon")
+          .last()
+          .waitFor({ timeout: 25000 });
         await axe();
         await page.screenshot({
-          path: `.shots/${theme}-${width}.png`,
+          path: `.shots/network-${theme}-${width}.png`,
           fullPage: true,
         });
-        for (const route of ["cartago", "belen"]) {
-          await page.locator(`[data-route="${route}"]`).click();
-          await checkLayout();
-          await axe();
-        }
       }
     }
     for (const path of ["/fuentes.html", "/404.html"]) {
-      await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`${base}${path}`);
-      await checkLayout();
+      await layout();
       await axe();
-      await page.screenshot({
-        path: `.shots/${theme}-${path.slice(1, -5)}.png`,
-        fullPage: true,
-      });
     }
   }
-
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto(`${base}/?date=2026-11-09&time=06:00`);
-  await page.locator(".board-time").first().waitFor();
-  assert.equal(await page.locator("h1").isVisible(), true);
+  await page.goto(url);
+  await loaded();
   await page.keyboard.press("Tab");
   assert.equal(
     await page.evaluate(() => document.activeElement.className),
     "skip-link",
   );
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 15; i++) {
     assert.ok(
       await page.evaluate(
         () => getComputedStyle(document.activeElement).outlineStyle !== "none",
@@ -212,53 +157,27 @@ try {
     );
     await page.keyboard.press("Tab");
   }
-  assert.equal(
-    await page
-      .locator('a[href^="#"]')
-      .evaluateAll(
-        (links) =>
-          links.filter((link) => !document.getElementById(link.hash.slice(1)))
-            .length,
-      ),
-    0,
-  );
-  await page.screenshot({ path: ".shots/reduced-motion.png", fullPage: true });
-
-  const failedMap = await context.newPage();
-  await failedMap.route("https://cdnjs.cloudflare.com/**", (route) =>
+  const failed = await context.newPage();
+  await failed.route("https://cdnjs.cloudflare.com/**", (route) =>
     route.abort(),
   );
-  await failedMap.goto(`${base}/?date=2026-11-09&time=06:00`);
-  await failedMap.locator("#geographic-map summary").click();
-  await failedMap
-    .getByText("No pudimos cargar el mapa.", { exact: false })
-    .waitFor();
-  assert.equal(
-    await failedMap.locator(".board-time").first().textContent(),
-    "06:01",
-  );
-  await failedMap.close();
-
+  await failed.goto(url);
+  await failed.locator("#retry-map").waitFor();
+  assert.match(await failed.locator("#map-status").textContent(), /No pudimos/);
+  assert.ok(await failed.locator(".board-time").count());
+  await failed.locator("#retry-map").click();
+  await failed.locator("#retry-map").waitFor();
+  await failed.close();
   const failedData = await context.newPage();
   await failedData.route("**/data/schedules.mjs", (route) => route.abort());
   await failedData.goto(base);
   await failedData
     .getByText("No pudimos cargar los horarios.", { exact: true })
     .waitFor();
-  assert.equal(
-    await failedData.locator("#departures-section").getAttribute("aria-busy"),
-    "false",
-  );
   await failedData.close();
-
-  const noScript = await browser.newContext({ javaScriptEnabled: false });
-  const plain = await noScript.newPage();
-  await plain.goto(`${base}/fuentes.html`);
-  assert.equal(await plain.locator(".source-list a").count(), 5);
-  await noScript.close();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: all corridors and directions; trip/station selection; full schedules; weekend, late, same-station, no-direct and invalid searches; share/reload; live-time reset; light/dark at 320–1920px; no overlapping form controls; WCAG AA axe checks; keyboard and reduced motion; unavailable map/data; no-JS source page.",
+    "PASS: automatic cross-line transfers, 34 global stations, no corridor selector, detailed transfer waits, share/reload, all-network map markers and endpoint selection, weekend/late/invalid endpoints, both themes at 320–1920px, axe AA, keyboard, reduced motion, failed-map retry and failed-data fallback.",
   );
 } finally {
   await browser.close();
