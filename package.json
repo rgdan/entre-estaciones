@@ -2,6 +2,7 @@
   "name": "entre-estaciones",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@12.16.1",
   "type": "module",
   "description": "Guía independiente de horarios de tren en Costa Rica",
   "scripts": {

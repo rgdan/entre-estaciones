@@ -10,7 +10,7 @@ Una guía independiente para consultar trenes de **Alajuela, Heredia, San José,
 ## El viaje, de un vistazo
 
 - **Las conexiones se calculan solas.** No hay que elegir una línea. El itinerario indica qué tren tomar, dónde bajar, cuánto esperar y qué tren sigue.
-- **Selección explícita.** Cada tren tiene un botón Seleccionar; la opción elegida indica Seleccionado y abre sus pasos y transbordos. Limpiar selección cierra el detalle y quita el resaltado del mapa. Seis resultados a la vista, con acceso al resto.
+- **Selección explícita.** Cada tren tiene un botón Seleccionar; la opción elegida indica Seleccionado y abre sus pasos y transbordos. Limpiar selección está siempre visible debajo del formulario: borra origen, destino y viaje elegido, conserva la fecha y devuelve el foco al origen. Seis resultados a la vista, con acceso al resto.
 - **El mapa siempre visible.** Los 34 puntos de toda la red permiten elegir origen o destino; el viaje seleccionado se resalta en dorado.
 - **Solo la fecha.** Se muestran los horarios de todo el día, sin filtro de hora. Los fines de semana ofrecen consultar el próximo día hábil.
 - **Español e inglés.** Cambiá el idioma desde el encabezado. Se traducen los controles, resultados, transbordos y mapa; se conservan los nombres propios. La preferencia se guarda en este navegador.
@@ -35,11 +35,11 @@ Los transbordos requieren **al menos cinco minutos** entre llegada y salida en l
 
 ## Probar en local
 
-Necesitás **Node.js 22.18 o superior** y npm. La aplicación usa **Vue 3 + Vite**.
+Necesitás **Node.js 22.18 o superior** y **pnpm 12.16.1**. La aplicación usa **Vue 3 + Vite**.
 
 ```bash
-npm ci
-npm start
+pnpm install --frozen-lockfile
+pnpm start
 ```
 
 Abrí **[localhost:4173](http://localhost:4173)**. Las consultas conservan estaciones, fecha e idioma en la URL.
@@ -49,26 +49,26 @@ Abrí **[localhost:4173](http://localhost:4173)**. Las consultas conservan estac
 Las pruebas comprueban horarios, transbordos, coordenadas y traducciones:
 
 ```bash
-npm test
+pnpm test
 ```
 
 Para verificar la versión compilada, ejecutá en una terminal:
 
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
 
 En otra terminal:
 
 ```bash
-npx playwright install chromium
-npm run test:browser
+pnpm exec playwright install chromium
+pnpm test:browser
 ```
 
 La prueba de navegador cubre transbordos automáticos, los 34 marcadores y la selección de estaciones desde el mapa, fechas y casos sin servicio, ambos idiomas, selección explícita, preferencias, temas, teclado, movimiento reducido, fallos del mapa con reintento y tamaños de 320 a 1920px. Ejecuta axe para WCAG AA y guarda las capturas en `.shots/`.
 
-Para otro servidor: `TEST_URL=http://127.0.0.1:4400 npm run test:browser`. Si ya tenés un Chromium compatible, podés indicar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+Para otro servidor: `TEST_URL=http://127.0.0.1:4400 pnpm test:browser`. Si ya tenés un Chromium compatible, podés indicar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
 ## Dentro del proyecto
 
@@ -97,7 +97,7 @@ Archivo y su licencia OFL se sirven desde `assets/fonts/`; no hay solicitudes a 
 
 ## Publicar
 
-Compilá con `npm run build` y publicá el contenido de **`dist/`** en un alojamiento estático. `npm run preview` permite revisar esa misma salida localmente. El aviso de horario no oficial está en el pie de la página; las imágenes originales y la procedencia permanecen en este repositorio.
+Compilá con `pnpm build` y publicá el contenido de **`dist/`** en un alojamiento estático. `pnpm preview` permite revisar esa misma salida localmente. El aviso de horario no oficial está en el pie de la página; las imágenes originales y la procedencia permanecen en este repositorio.
 
 Antes de publicar, agregá las URL canónicas, las URL absolutas de la imagen social y el sitemap con el dominio real. No hay un dominio de producción configurado ni un despliegue incluido.
 
