@@ -81,7 +81,7 @@ function retryMap() { location.reload(); }
 async function initializeMap() {
   mapStatus.value = 'mapLoading';
   try {
-    const { createNetworkMap } = await import('../map.mjs');
+    const { createNetworkMap } = await import('../lib/map.mjs');
     if (disposed) return;
     mapController?.destroy();
     mapController = createNetworkMap(mapElement.value, {

@@ -39,7 +39,7 @@ Para otro servidor, indique `TEST_URL=http://127.0.0.1:4400 pnpm test:browser`. 
 | `src/App.vue` | Formulario, resultados, preferencias y detalle del viaje |
 | `src/i18n.mjs` | Textos en español e inglés |
 | `styles.css` | Temas y adaptación a pantallas |
-| `map.mjs` | Mapa Leaflet de carga diferida |
+| `lib/map.mjs` | Mapa Leaflet de carga diferida |
 | `lib/transfers.mjs` | Búsqueda de conexiones entre líneas |
 | `lib/journeys.mjs` | Horas y calendario de servicio |
 | `data/` | Horarios y coordenadas |
